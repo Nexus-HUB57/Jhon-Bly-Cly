@@ -13,4 +13,4 @@
 - [x] Cobrir o fluxo de resultados e geração com estados acessíveis de carregamento, vazio, erro e êxito.
 - [x] Adicionar testes Vitest para os helpers de persistência do outbox e para a entrega assinada bem-sucedida ao Nexus_Orchestra.
 - [x] Documentar a arquitetura, contratos de integração e configuração necessária para sincronizar com o Nexus_Orchestra.
-- [ ] Verificar a interface em desktop e mobile, executar testes, salvar checkpoint e comitar no repositório Nexus-HUB57/Jhon-Bly-Cly.
+- [x] Verificar a interface em desktop e mobile, executar testes, salvar checkpoint e comitar no repositório Nexus-HUB57/Jhon-Bly-Cly.
