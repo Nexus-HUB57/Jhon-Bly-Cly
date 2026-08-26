@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Boxes, Clapperboard, FolderKanban, LogOut, PanelLeft, Plus, Workflow } from "lucide-react";
+import { Blocks, Clapperboard, FolderKanban, LogOut, PanelLeft, Workflow } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -32,6 +32,7 @@ const menuItems = [
   { icon: FolderKanban, label: "Projetos", path: "/" },
   { icon: Clapperboard, label: "Produção", path: "/" },
   { icon: Workflow, label: "Orquestração", path: "/" },
+  { icon: Blocks, label: "Fusão", path: "/fusion" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

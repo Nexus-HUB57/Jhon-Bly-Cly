@@ -14,3 +14,10 @@
 - [x] Adicionar testes Vitest para os helpers de persistência do outbox e para a entrega assinada bem-sucedida ao Nexus_Orchestra.
 - [x] Documentar a arquitetura, contratos de integração e configuração necessária para sincronizar com o Nexus_Orchestra.
 - [x] Verificar a interface em desktop e mobile, executar testes, salvar checkpoint e comitar no repositório Nexus-HUB57/Jhon-Bly-Cly.
+- [x] Clonar e inventariar os repositórios de agentes, modelos e ferramentas solicitados sem executar código de terceiros.
+- [x] Classificar cada fonte por finalidade, licença, risco operacional e adequação ao Jhon Bly Cly e Nexus_Orchestra.
+- [x] Implementar um catálogo de capacidades e conectores em modo seguro, sem importar credenciais, instruções internas ou componentes sem compatibilidade confirmada.
+- [x] Adicionar interface de sincronização e documentação da arquitetura modular da fusão.
+- [x] Implementar uma camada explícita de conectores seguros com elegibilidade, BYOK pendente, bloqueios por risco/licença e contrato de sincronização.
+- [x] Adicionar testes para catálogo, conectores seguros e bloqueio de fontes sensíveis ou instruções internas.
+- [ ] Cobrir a nova camada com testes, validar build, salvar checkpoint e comitar a fusão no repositório Nexus-HUB57/Jhon-Bly-Cly.

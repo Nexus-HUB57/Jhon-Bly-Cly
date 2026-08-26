@@ -1,4 +1,4 @@
-import { int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 import { TASK_STATUSES } from "../shared/video";
 
 /**
@@ -113,9 +113,32 @@ export const orchestraEvents = mysqlTable("orchestra_events", {
   occurredAt: timestamp("occurredAt").defaultNow().notNull(),
 });
 
+export const fusionConnectorProfiles = mysqlTable("fusion_connector_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  connectorId: varchar("connectorId", { length: 120 }).notNull(),
+  status: mysqlEnum("status", ["não configurado", "aguardando credencial", "ativo", "bloqueado"]).notNull().default("não configurado"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("fusion_connector_profiles_user_connector_unique").on(table.userId, table.connectorId)]);
+
+export const fusionSyncEvents = mysqlTable("fusion_sync_events", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  eventName: varchar("eventName", { length: 160 }).notNull(),
+  payload: json("payload").notNull(),
+  deliveryStatus: mysqlEnum("deliveryStatus", ["pendente", "entregue", "falha"]).notNull().default("pendente"),
+  deliveryAttempts: int("deliveryAttempts").notNull().default(0),
+  deliveryError: text("deliveryError"),
+  deliveredAt: timestamp("deliveredAt"),
+  occurredAt: timestamp("occurredAt").defaultNow().notNull(),
+});
+
 export type VideoProject = typeof videoProjects.$inferSelect;
 export type InsertVideoProject = typeof videoProjects.$inferInsert;
 export type VideoScene = typeof videoScenes.$inferSelect;
 export type InsertVideoScene = typeof videoScenes.$inferInsert;
 export type ProjectAsset = typeof projectAssets.$inferSelect;
 export type OrchestraEvent = typeof orchestraEvents.$inferSelect;
+export type FusionConnectorProfile = typeof fusionConnectorProfiles.$inferSelect;
+export type FusionSyncEvent = typeof fusionSyncEvents.$inferSelect;

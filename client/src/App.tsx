@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
+import EcosystemFusion from "./pages/EcosystemFusion";
 import Home from "./pages/Home";
 import ProjectWorkspace from "./pages/ProjectWorkspace";
 
@@ -13,6 +14,7 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"}><DashboardLayout><Home /></DashboardLayout></Route>
+      <Route path={"/fusion"}><DashboardLayout><EcosystemFusion /></DashboardLayout></Route>
       <Route path={"/projects/:id"}><DashboardLayout><ProjectWorkspace /></DashboardLayout></Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

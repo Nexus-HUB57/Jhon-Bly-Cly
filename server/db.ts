@@ -2,6 +2,8 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   generationRuns,
+  fusionConnectorProfiles,
+  fusionSyncEvents,
   InsertUser,
   InsertVideoProject,
   InsertVideoScene,
@@ -261,4 +263,38 @@ export async function recordOrchestraDelivery(eventId: number, delivered: boolea
     deliveryError: error ?? null,
     deliveredAt: delivered ? new Date() : null,
   }).where(eq(orchestraEvents.id, eventId));
+}
+
+export async function listFusionConnectorProfiles(userId: number) {
+  const db = requireDatabase(await getDb());
+  return db.select().from(fusionConnectorProfiles).where(eq(fusionConnectorProfiles.userId, userId));
+}
+
+export async function stageFusionConnector(userId: number, connectorId: string) {
+  const db = requireDatabase(await getDb());
+  await db.insert(fusionConnectorProfiles).values({
+    userId,
+    connectorId,
+    status: "aguardando credencial",
+  }).onDuplicateKeyUpdate({
+    set: { status: "aguardando credencial", updatedAt: new Date() },
+  });
+}
+
+export async function createFusionSyncEvent(userId: number, eventName: string, payload: unknown) {
+  const db = requireDatabase(await getDb());
+  const result = await db.insert(fusionSyncEvents).values({ userId, eventName, payload });
+  const id = Number(result[0].insertId);
+  const [event] = await db.select().from(fusionSyncEvents).where(eq(fusionSyncEvents.id, id)).limit(1);
+  return event;
+}
+
+export async function recordFusionSyncDelivery(eventId: number, delivered: boolean, error?: string) {
+  const db = requireDatabase(await getDb());
+  await db.update(fusionSyncEvents).set({
+    deliveryStatus: delivered ? "entregue" : "falha",
+    deliveryAttempts: 1,
+    deliveryError: error ?? null,
+    deliveredAt: delivered ? new Date() : null,
+  }).where(eq(fusionSyncEvents.id, eventId));
 }

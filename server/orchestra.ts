@@ -16,6 +16,15 @@ export type OrchestraDeliveryResult = {
   error?: string;
 };
 
+type FusionSyncEnvelope = {
+  source: string;
+  schemaVersion: string;
+  eventName: string;
+  occurredAt: string;
+  summary: unknown;
+  repositories: unknown;
+};
+
 /**
  * Delivers a persisted domain event only when a receiving endpoint is configured.
  * The application never exposes the shared secret to the browser.
@@ -62,5 +71,31 @@ export async function deliverToNexusOrchestra(
       delivered: false,
       error: error instanceof Error ? error.message : "Falha desconhecida na sincronização.",
     };
+  }
+}
+
+/** Sends an ecosystem-level envelope using the same optional webhook and HMAC policy as project events. */
+export async function deliverFusionSyncToNexusOrchestra(envelope: FusionSyncEnvelope): Promise<OrchestraDeliveryResult> {
+  const endpoint = process.env.NEXUS_ORCHESTRA_WEBHOOK_URL;
+  const secret = process.env.NEXUS_ORCHESTRA_WEBHOOK_SECRET;
+  if (!endpoint) return { delivered: false, error: "Endpoint do Nexus_Orchestra ainda não configurado." };
+
+  const body = JSON.stringify({ source: envelope.source, schemaVersion: envelope.schemaVersion, fusion: envelope });
+  const signature = secret ? createHmac("sha256", secret).update(body).digest("hex") : undefined;
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-jhon-bly-cly-event": envelope.eventName,
+        ...(signature ? { "x-jhon-bly-cly-signature": `sha256=${signature}` } : {}),
+      },
+      body,
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!response.ok) return { delivered: false, error: `Nexus_Orchestra respondeu com HTTP ${response.status}.` };
+    return { delivered: true };
+  } catch (error) {
+    return { delivered: false, error: error instanceof Error ? error.message : "Falha desconhecida na sincronização." };
   }
 }

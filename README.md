@@ -44,3 +44,7 @@ O workspace persiste os eventos antes de qualquer tentativa de envio. Para ativa
 | `NEXUS_ORCHESTRA_WEBHOOK_SECRET` | Segredo compartilhado para assinatura HMAC SHA-256. |
 
 Sem uma URL configurada, o aplicativo preserva o evento e informa que a entrega externa aguarda configuração, sem interromper os fluxos internos. O arquivo original fornecido como referência de arquitetura foi preservado em [`docs/PromptAIVideo.txt`](docs/PromptAIVideo.txt).
+
+## Fusão modular do ecossistema
+
+O painel **Fusão** inventaria e classifica fontes externas por licença, risco e rota de integração. Ele expõe conectores preparados em modo seguro, preserva a intenção de configuração por usuário e gera um envelope auditável para o Nexus_Orchestra. Fontes de prompts internos/vazados, rotas de acesso não autorizado ou dependências sem compatibilidade confirmada permanecem bloqueadas. Consulte [`docs/FUSAO_ECOSSISTEMA.md`](docs/FUSAO_ECOSSISTEMA.md) para a matriz de decisões e o contrato de sincronização.
