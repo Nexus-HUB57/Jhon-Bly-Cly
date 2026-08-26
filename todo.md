@@ -20,4 +20,4 @@
 - [x] Adicionar interface de sincronização e documentação da arquitetura modular da fusão.
 - [x] Implementar uma camada explícita de conectores seguros com elegibilidade, BYOK pendente, bloqueios por risco/licença e contrato de sincronização.
 - [x] Adicionar testes para catálogo, conectores seguros e bloqueio de fontes sensíveis ou instruções internas.
-- [ ] Cobrir a nova camada com testes, validar build, salvar checkpoint e comitar a fusão no repositório Nexus-HUB57/Jhon-Bly-Cly.
+- [x] Cobrir a nova camada com testes, validar build, salvar checkpoint e comitar a fusão no repositório Nexus-HUB57/Jhon-Bly-Cly.
