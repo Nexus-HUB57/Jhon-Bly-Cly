@@ -18,3 +18,7 @@ O limite por requisição é uma barreira local de segurança. A data de quota u
 > A política de tokenização controla o que o JBC pode propor; ela não cria saldo, não promete acesso gratuito e não executa qualquer provedor.
 
 A geração audiovisual permanece no backend JBC quando o conector MiniMax estiver disponível. A política de tokens atende planejamento e análise textual; ela não converte tokens gratuitos em um motor local de vídeo e não substitui um runtime de mídia autorizado.
+
+## Verificação visual autenticada
+
+Após o reinício do servidor, o smoke autenticado em `/orchestration` carregou o dashboard, o 9router, o runtime de provedores e a nova seção **Processamento de tokens**. A seção exibiu as sete APIs sincronizadas e o Ollama local, os limites de 8.192 ou 4.096 tokens por requisição, reset UTC e o aviso de que a matriz não roteia, alterna, cobra ou chama provedores. Nenhuma ação foi acionada durante a verificação. O log pós-reinício não registrou a referência `PRODUCTION_PACKAGE_STATUSES is not defined`; a única mensagem operacional observada foi o encerramento/reinício do processo durante a manutenção, não um erro persistente de aplicação.

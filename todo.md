@@ -147,3 +147,5 @@
 - [x] Exibir o orçamento e o estado de tokenização no painel de orquestração sem permitir execução, troca automática de credencial ou fallback em cascata.
 - [x] Cobrir a política com testes de limite diário, reset, seleção determinística e bloqueio de execução externa.
 - [x] Documentar que Ollama é gratuito apenas como runtime local do proprietário e requer host/processo próprio; o JBC não o instala nem o inicia automaticamente.
+- [x] Corrigir o erro ativo `PRODUCTION_PACKAGE_STATUSES is not defined` no fluxo/painel de pacote de produção sem alterar estados de vídeo ou dados históricos.
+- [x] Reexecutar smoke test autenticado das rotas afetadas e registrar evidência atualizada de ausência de erros ativos antes de concluir o item amplo de disponibilidade.
