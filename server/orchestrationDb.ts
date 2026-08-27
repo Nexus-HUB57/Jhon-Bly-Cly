@@ -101,13 +101,22 @@ export async function updateGovernanceCatalogEntry(input: { userId: number; entr
   return updated;
 }
 
-export async function createGovernedToolInvocation(input: { userId: number; catalogEntryId: number; action: string; requestSummary: string }) {
+export async function createGovernedToolInvocation(input: { userId: number; catalogEntryId: number; action: string; requestSummary: string; proposalOnly?: boolean }) {
   const db = requireDatabase(await getDb());
   const [entry] = await db.select().from(governanceCatalogEntries).where(and(eq(governanceCatalogEntries.id, input.catalogEntryId), eq(governanceCatalogEntries.userId, input.userId))).limit(1);
   if (!entry) throw new Error("Ferramenta ou rota não encontrada no catálogo protegido.");
-  const status = entry.status === "ativado" ? "proposta" as const : "bloqueada" as const;
-  const result = await db.insert(governedToolInvocations).values({ userId: input.userId, catalogEntryId: entry.id, action: input.action, status, requestSummary: input.requestSummary, resultSummary: status === "bloqueada" ? "Invocação registrada sem execução: a entrada ainda não foi ativada com aprovação humana." : null });
+  const status = input.proposalOnly || entry.status === "ativado" ? "proposta" as const : "bloqueada" as const;
+  const result = await db.insert(governedToolInvocations).values({ userId: input.userId, catalogEntryId: entry.id, action: input.action, status, requestSummary: input.requestSummary, resultSummary: input.proposalOnly ? "Seleção registrada para revisão humana; nenhuma integração, credencial ou chamada externa foi executada." : status === "bloqueada" ? "Invocação registrada sem execução: a entrada ainda não foi ativada com aprovação humana." : null });
   return { id: Number(result[0].insertId), status, executed: false };
+}
+
+export async function countGovernedRouterProposals(userId: number) {
+  const db = requireDatabase(await getDb());
+  const records = await db.select({ id: governedToolInvocations.id }).from(governedToolInvocations).where(and(
+    eq(governedToolInvocations.userId, userId),
+    eq(governedToolInvocations.action, "9router: seleção governada")
+  ));
+  return records.length;
 }
 
 export async function recordCoreRoleAudit(input: {

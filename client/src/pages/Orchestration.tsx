@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { Activity, BrainCircuit, CirclePause, Play, ShieldCheck, Sparkles, Webhook } from "lucide-react";
-import { useState } from "react";
+import { Activity, BrainCircuit, CirclePause, Play, ShieldCheck, Sparkles, Webhook, Workflow } from "lucide-react";
+import { useMemo, useState } from "react";
 
 function formatDate(value: Date | string | null | undefined) {
   return value ? new Date(value).toLocaleString("pt-BR") : "Ainda não registrado";
@@ -38,6 +38,11 @@ export default function Orchestration() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [scheduleMessage, setScheduleMessage] = useState<string | null>(null);
   const [coreMessage, setCoreMessage] = useState<string | null>(null);
+  const [routeCapability, setRouteCapability] = useState<"planejamento e orquestração" | "pesquisa e referência" | "mídia generativa" | "arquitetura e telemetria" | "infraestrutura de modelo">("planejamento e orquestração");
+  const [routeRisk, setRouteRisk] = useState<"baixo" | "médio" | "alto">("médio");
+  const [routeRequest, setRouteRequest] = useState("Organizar uma proposta criativa revisável para o projeto atual.");
+  const routeInput = useMemo(() => ({ capability: routeCapability, maxRisk: routeRisk, request: routeRequest.trim() }), [routeCapability, routeRisk, routeRequest]);
+  const routerPreview = trpc.fusion.routerPreview.useQuery(routeInput, { enabled: routeInput.request.length >= 3 });
 
   const retryQuery = (kind: "dashboard" | "providers" | "adapters") => {
     setPreviewFailure(null);
@@ -74,6 +79,14 @@ export default function Orchestration() {
   const proposeCatalogAction = trpc.orchestration.proposeCatalogAction.useMutation({ onSuccess: refresh, onError: error => setActionError(error.message) });
   const retrieveMemory = trpc.orchestration.plannerRetrieve.useMutation({ onSuccess: refresh, onError: error => setActionError(error.message) });
   const observeCoreRole = trpc.orchestration.observeCoreRole.useMutation({ onSuccess: refresh, onError: error => setActionError(error.message) });
+  const proposeGovernedRoute = trpc.fusion.proposeGovernedRoute.useMutation({
+    onSuccess: async result => {
+      setActionError(null);
+      setCoreMessage(`9router registrou a alternância ${result.plan.rotationOffset} com ${result.plan.eligibleCount} candidato(s) para revisão; nenhuma execução externa ocorreu.`);
+      await Promise.all([refresh(), utils.fusion.routerPreview.invalidate()]);
+    },
+    onError: error => setActionError(error.message),
+  });
 
   const activateAndRun = async () => {
     try {
@@ -160,6 +173,37 @@ export default function Orchestration() {
           <Card className="glass-panel">
             <CardHeader><CardTitle>Memória, roteamento e ferramentas</CardTitle><CardDescription>Os contratos solicitados ficam inativos por padrão. Registrar uma proposta nunca executa integrações externas.</CardDescription></CardHeader>
             <CardContent className="space-y-3">{data.catalog.map(entry => <div key={entry.id} className="rounded-xl border bg-white/70 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-semibold">{entry.name}</p><p className="mt-1 text-xs text-muted-foreground">{entry.kind} · risco {entry.riskLevel}</p></div><Badge variant={entry.status === "bloqueado" ? "destructive" : entry.status === "ativado" ? "outline" : "secondary"}>{entry.status}</Badge></div><p className="mt-2 text-xs text-muted-foreground">{entry.guardrail}</p><div className="mt-3 flex flex-wrap gap-2">{user?.role === "admin" && entry.status === "catálogo" ? <Button size="sm" variant="outline" onClick={() => stageCatalogEntry.mutate({ entryId: entry.id, status: "aguardando aprovação" })} disabled={stageCatalogEntry.isPending}>Solicitar revisão</Button> : null}<Button size="sm" variant="ghost" onClick={() => proposeCatalogAction.mutate({ catalogEntryId: entry.id, action: "avaliar contrato", requestSummary: `Solicitação de avaliação auditável para ${entry.name}.` })} disabled={proposeCatalogAction.isPending}>Registrar proposta</Button></div></div>)}</CardContent>
+          </Card>
+        </section>
+
+        <section>
+          <Card className="glass-panel border-cyan-200/80">
+            <CardHeader><CardTitle className="flex items-center gap-2"><Workflow className="h-5 w-5 text-cyan-700" /> 9router · alternância governada</CardTitle><CardDescription>Selecione a finalidade. O Studio ordena somente os adaptadores elegíveis entre as 19 fontes e registra uma proposta revisável; esta tela nunca executa agentes, repositórios, ferramentas, conectores ou chamadas externas.</CardDescription></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="grid gap-1.5 text-sm font-medium">Capacidade
+                  <select value={routeCapability} onChange={event => setRouteCapability(event.target.value as typeof routeCapability)} className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <option value="planejamento e orquestração">Planejamento e orquestração</option>
+                    <option value="pesquisa e referência">Pesquisa e referência</option>
+                    <option value="mídia generativa">Mídia generativa</option>
+                    <option value="arquitetura e telemetria">Arquitetura e telemetria</option>
+                    <option value="infraestrutura de modelo">Infraestrutura de modelo</option>
+                  </select>
+                </label>
+                <label className="grid gap-1.5 text-sm font-medium">Teto de risco
+                  <select value={routeRisk} onChange={event => setRouteRisk(event.target.value as typeof routeRisk)} className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <option value="baixo">Baixo</option>
+                    <option value="médio">Médio</option>
+                    <option value="alto">Alto</option>
+                  </select>
+                </label>
+                <div className="rounded-xl border border-cyan-100 bg-cyan-50/70 p-3 text-xs text-cyan-900"><b className="block">Controle obrigatório</b>Saída limitada a proposta e aprovação humana.</div>
+              </div>
+              <div><label htmlFor="router-request" className="text-sm font-medium">Pedido para roteamento</label><Textarea id="router-request" value={routeRequest} onChange={event => setRouteRequest(event.target.value)} maxLength={600} className="mt-1.5 min-h-22" /></div>
+              {routerPreview.isError ? <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">Não foi possível calcular a prévia de rota. Nenhuma proposta foi registrada.</p> : null}
+              {routerPreview.data ? <div className="rounded-xl border bg-white/70 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">Prévia de alternância {routerPreview.data.rotationOffset}</p><Badge variant="secondary">{routerPreview.data.eligibleCount} elegível(is) de {routerPreview.data.totalAdapters}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{routerPreview.data.policy.note}</p><div className="mt-3 grid gap-2 lg:grid-cols-2">{routerPreview.data.candidates.length ? routerPreview.data.candidates.map(candidate => <div key={candidate.id} className="rounded-lg border bg-slate-50/70 p-3"><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold">{candidate.rank}. {candidate.repository}</p><Badge variant="outline">risco {candidate.riskLevel}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{candidate.reason}</p></div>) : <p className="text-sm text-muted-foreground">Nenhum adaptador elegível atende a esta combinação. Amplie apenas o teto de risco que você deseja revisar.</p>}</div></div> : <p className="text-sm text-muted-foreground">Preencha pelo menos três caracteres para calcular uma prévia sem efeitos externos.</p>}
+              <Button onClick={() => proposeGovernedRoute.mutate(routeInput)} disabled={proposeGovernedRoute.isPending || routeInput.request.length < 3 || !routerPreview.data} className="gap-2"><Workflow className="h-4 w-4" />{proposeGovernedRoute.isPending ? "Registrando proposta…" : "Registrar seleção para revisão"}</Button>
+            </CardContent>
           </Card>
         </section>
 

@@ -4,8 +4,16 @@ import { createFusionSyncEvent, listFusionConnectorProfiles, recordFusionSyncDel
 import { deliverFusionSyncToNexusOrchestra } from "../orchestra";
 import { createFusionSyncEnvelope, FUSION_CONNECTORS, FUSION_REPOSITORIES, FUSION_RISK_LEVELS, FUSION_ROUTES, getFusionConnector, isFusionConnectorEligible, summarizeFusionCatalog } from "../../shared/fusionCatalog";
 import { JBCX19_ADAPTERS, summarizeJbcx19Adapters } from "../../shared/jbcx19Adapters";
+import { buildGovernedRoutePlan, GOVERNED_ROUTER_CAPABILITIES, GOVERNED_ROUTER_RISKS } from "../../shared/governedRouter";
 import { PROVIDER_RUNTIME_REGISTRY, summarizeProviderRuntime } from "../../shared/providerRuntime";
 import { protectedProcedure, router } from "../_core/trpc";
+import { countGovernedRouterProposals, createGovernedToolInvocation, listOrSeedGovernanceCatalog, recordCoreRoleAudit } from "../orchestrationDb";
+
+const governedRouteInput = z.object({
+  capability: z.enum(GOVERNED_ROUTER_CAPABILITIES),
+  maxRisk: z.enum(GOVERNED_ROUTER_RISKS).default("médio"),
+  request: z.string().trim().min(3).max(600),
+});
 
 export const fusionRouter = router({
   catalog: protectedProcedure
@@ -22,6 +30,34 @@ export const fusionRouter = router({
       items: JBCX19_ADAPTERS.map(adapter => ({ ...adapter, profile: profiles.find(profile => profile.connectorId === adapter.id) ?? null })),
       summary: summarizeJbcx19Adapters(),
     };
+  }),
+  routerPreview: protectedProcedure.input(governedRouteInput).query(async ({ ctx, input }) => {
+    const rotationOffset = await countGovernedRouterProposals(ctx.user.id);
+    return buildGovernedRoutePlan({ ...input, rotationOffset });
+  }),
+  proposeGovernedRoute: protectedProcedure.input(governedRouteInput).mutation(async ({ ctx, input }) => {
+    const rotationOffset = await countGovernedRouterProposals(ctx.user.id);
+    const plan = buildGovernedRoutePlan({ ...input, rotationOffset });
+    const catalog = await listOrSeedGovernanceCatalog(ctx.user.id);
+    const routerEntry = catalog.find(entry => entry.identifier === "9router");
+    if (!routerEntry) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "A entrada 9router não está disponível no catálogo governado." });
+    const selection = plan.candidates.map(candidate => candidate.id).join(", ") || "nenhum candidato elegível";
+    const proposal = await createGovernedToolInvocation({
+      userId: ctx.user.id,
+      catalogEntryId: routerEntry.id,
+      action: "9router: seleção governada",
+      requestSummary: `Solicitação: ${input.request}. Capacidade: ${input.capability}. Teto de risco: ${input.maxRisk}. Alternância ${rotationOffset}. Candidatos: ${selection}.`,
+      proposalOnly: true,
+    });
+    await recordCoreRoleAudit({
+      userId: ctx.user.id,
+      roleId: "planner",
+      eventName: "Seleção 9router",
+      status: "aguardando revisão",
+      evidenceCount: plan.candidates.length,
+      summary: `Alternância ${rotationOffset} registrada para ${input.capability}; nenhuma integração externa foi executada.`,
+    });
+    return { ...proposal, plan };
   }),
   sync: protectedProcedure.mutation(async ({ ctx }) => {
     const envelope = createFusionSyncEnvelope();

@@ -113,3 +113,7 @@
 - [x] Corrigir o callback Heartbeat para responder 500 estruturado em falhas de ciclo e preservar 403 somente para autenticação cron recusada.
 - [x] Marcar a mutation de geração de vídeo para tratamento local, evitando que sua falha de negócio já exibida ao operador seja registrada como erro global do navegador.
 - [x] Confirmar que a reversão da exposição pública preservou código, banco, ativos, checkpoints e o ambiente de desenvolvimento antes de concluí-la.
+- [x] Projetar uma política 9router auditável que selecione e intercale os 19 adaptadores por capacidade, estado, risco e aprovação humana.
+- [x] Implementar o roteamento governado sem autoativar conectores, executar repositórios externos ou usar credenciais fora do cofre protegido.
+- [x] Consolidar a matriz dos 19 adaptadores em capacidades, estados e níveis de risco usados pelo 9router.
+- [x] Exigir aprovação humana explícita para qualquer intenção roteada que ultrapasse seleção e proposta auditável.

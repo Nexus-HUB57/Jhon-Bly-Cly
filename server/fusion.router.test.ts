@@ -8,9 +8,16 @@ const dbMocks = vi.hoisted(() => ({
   stageFusionConnector: vi.fn(),
 }));
 const orchestraMock = vi.hoisted(() => ({ deliverFusionSyncToNexusOrchestra: vi.fn() }));
+const orchestrationMocks = vi.hoisted(() => ({
+  countGovernedRouterProposals: vi.fn(),
+  createGovernedToolInvocation: vi.fn(),
+  listOrSeedGovernanceCatalog: vi.fn(),
+  recordCoreRoleAudit: vi.fn(),
+}));
 
 vi.mock("./db", () => dbMocks);
 vi.mock("./orchestra", () => orchestraMock);
+vi.mock("./orchestrationDb", () => orchestrationMocks);
 
 import { fusionRouter } from "./routers/fusion";
 
@@ -28,6 +35,9 @@ describe("router de fusão", () => {
     dbMocks.listFusionConnectorProfiles.mockResolvedValue([]);
     dbMocks.createFusionSyncEvent.mockResolvedValue({ id: 77 });
     orchestraMock.deliverFusionSyncToNexusOrchestra.mockResolvedValue({ delivered: false, error: "Endpoint do Nexus_Orchestra ainda não configurado." });
+    orchestrationMocks.countGovernedRouterProposals.mockResolvedValue(0);
+    orchestrationMocks.listOrSeedGovernanceCatalog.mockResolvedValue([{ id: 91, identifier: "9router" }]);
+    orchestrationMocks.createGovernedToolInvocation.mockResolvedValue({ id: 92, status: "proposta", executed: false });
   });
 
   it("prepara um conector elegível sem receber credencial no navegador", async () => {
@@ -51,5 +61,14 @@ describe("router de fusão", () => {
     expect(result).toMatchObject({ eventId: 77, deliveryStatus: "falha" });
     expect(dbMocks.createFusionSyncEvent).toHaveBeenCalledWith(4, "ecosystem.fusion.catalog.synchronized", expect.any(Object));
     expect(dbMocks.recordFusionSyncDelivery).toHaveBeenCalledWith(77, false, "Endpoint do Nexus_Orchestra ainda não configurado.");
+  });
+
+  it("registra uma alternância 9router como proposta, sem executar adaptadores", async () => {
+    const caller = fusionRouter.createCaller(context());
+    const result = await caller.proposeGovernedRoute({ capability: "planejamento e orquestração", maxRisk: "alto", request: "Organizar o roteiro do projeto" });
+
+    expect(result).toMatchObject({ id: 92, status: "proposta", executed: false, plan: { totalAdapters: 19 } });
+    expect(orchestrationMocks.createGovernedToolInvocation).toHaveBeenCalledWith(expect.objectContaining({ catalogEntryId: 91, proposalOnly: true, action: "9router: seleção governada" }));
+    expect(orchestrationMocks.recordCoreRoleAudit).toHaveBeenCalledWith(expect.objectContaining({ roleId: "planner", eventName: "Seleção 9router" }));
   });
 });
