@@ -110,6 +110,16 @@ export async function createGovernedToolInvocation(input: { userId: number; cata
   return { id: Number(result[0].insertId), status, executed: false };
 }
 
+export async function findGovernedToolInvocation(input: { userId: number; action: string; requestSummary: string }) {
+  const db = requireDatabase(await getDb());
+  const [existing] = await db.select().from(governedToolInvocations).where(and(
+    eq(governedToolInvocations.userId, input.userId),
+    eq(governedToolInvocations.action, input.action),
+    eq(governedToolInvocations.requestSummary, input.requestSummary),
+  )).limit(1);
+  return existing;
+}
+
 export async function countGovernedRouterProposals(userId: number) {
   const db = requireDatabase(await getDb());
   const records = await db.select({ id: governedToolInvocations.id }).from(governedToolInvocations).where(and(

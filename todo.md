@@ -125,8 +125,11 @@
 - [x] Confirmar pelo painel oficial MiniMax, sem alterar cobrança, que o saldo disponível ainda é insuficiente para a prova KTD; não reenviar a geração enquanto a condição persistir.
 - [ ] Após confirmação de saldo disponível e autorização explícita da proposta, executar pelo backend JBC uma única tentativa auditável da prova KTD de 8 segundos com os ativos aprovados.
 - [ ] Inventariar, com documentação oficial, quais provedores ativos oferecem modalidade gratuita aplicável ao Studio sem assumir que uma chave existente habilita saldo, créditos ou escopo.
-- [ ] Projetar o fallback de saldo esgotado para registrar uma proposta 9router auditável, sem alternar provedor, ativar conectores ou executar chamada externa automaticamente.
+- [x] Projetar o fallback de saldo esgotado para registrar uma proposta 9router auditável, sem alternar provedor, ativar conectores ou executar chamada externa automaticamente.
 - [ ] Após aprovação humana do escopo de mídia, implementar e testar a política de fallback sem cobrança e sem reexecução em cascata.
+- [x] Ao receber a classificação segura de saldo insuficiente, registrar automaticamente uma escalada do Nexus_Orchestra e uma proposta 9router, sem acionar um adaptador, plataforma externa ou nova geração.
+- [x] Exibir no projeto a proposta de fallback pendente, seu limite de execução e a aprovação humana exigida antes de qualquer sincronização ou envio externo.
+- [x] Testar que o incidente de saldo insuficiente cria somente evidências e propostas auditáveis, sem chamar provedores alternativos, rotacionar tokens ou reexecutar o MiniMax.
 - [x] Inventariar as capacidades internas do JBC e os módulos de referência dos 19 repositórios, com licença, compatibilidade, risco e requisito de runtime explícitos.
 - [x] Definir uma arquitetura de autonomia comprovável que mantenha geração, plano, auditoria e referências no JBC, sem confundir catálogo de referências com modelos ou infraestrutura local incorporados.
 - [ ] Incorporar somente utilitários licenciados, estáticos e revisados que não executem código de terceiros, não instalem dependências e não exijam credenciais ou inferência remota.

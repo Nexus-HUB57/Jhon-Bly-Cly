@@ -28,6 +28,7 @@ import { deliverToNexusOrchestra } from "../orchestra";
 import { createMiniMaxVideoTask, hasMiniMaxCredentials, queryMiniMaxVideoTask } from "../minimax";
 import { rankMemories } from "../memory";
 import { listKnowledgeMemories, recordMemoryRetrieval } from "../orchestrationDb";
+import { isMiniMaxInsufficientBalanceFailure, registerInsufficientBalanceEscalation } from "../fallbackEscalation";
 import { canTransitionTaskStatus, TASK_STATUSES } from "../../shared/video";
 import { toSafeVideoErrorMessage } from "../../shared/videoErrorMessages";
 import { buildDefaultProductionPackage } from "../../shared/productionPackage";
@@ -396,6 +397,13 @@ export const videoRouter = router({
         await updateProjectScenesStatus(input.projectId, "com falha");
         await completeGenerationRun(runId, "com falha", undefined, message);
         await publishEvent({ projectId: input.projectId, eventName: "video.generation.failed", entityType: "generation_run", entityId: runId, payload: { status: "com falha", message } });
+        if (isMiniMaxInsufficientBalanceFailure(error)) {
+          try {
+            await registerInsufficientBalanceEscalation({ userId: ctx.user.id, projectId: input.projectId, runId });
+          } catch (escalationError) {
+            console.error("[FallbackEscalation] Não foi possível registrar a proposta de saldo insuficiente.", escalationError);
+          }
+        }
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
       }
     }),
