@@ -121,3 +121,16 @@
 - [x] Redigir detalhes técnicos e parâmetros internos de falhas históricas antes de exibi-los nos resultados do projeto.
 - [x] Validar no browser autenticado a aba Resultados do KTD junto com evidência explícita de ausência de erro global de navegador ao exibir a falha persistida de saldo insuficiente.
 - [x] Adicionar verificação automatizada que prove que falhas persistidas renderizadas no ProjectWorkspace não disparam o logger global.
+- [x] Registrar uma proposta 9router para a verificação de saldo MiniMax, sem executar chamada externa a partir do roteador.
+- [x] Confirmar pelo painel oficial MiniMax, sem alterar cobrança, que o saldo disponível ainda é insuficiente para a prova KTD; não reenviar a geração enquanto a condição persistir.
+- [ ] Após confirmação de saldo disponível e autorização explícita da proposta, executar pelo backend JBC uma única tentativa auditável da prova KTD de 8 segundos com os ativos aprovados.
+- [ ] Inventariar, com documentação oficial, quais provedores ativos oferecem modalidade gratuita aplicável ao Studio sem assumir que uma chave existente habilita saldo, créditos ou escopo.
+- [ ] Projetar o fallback de saldo esgotado para registrar uma proposta 9router auditável, sem alternar provedor, ativar conectores ou executar chamada externa automaticamente.
+- [ ] Após aprovação humana do escopo de mídia, implementar e testar a política de fallback sem cobrança e sem reexecução em cascata.
+- [x] Inventariar as capacidades internas do JBC e os módulos de referência dos 19 repositórios, com licença, compatibilidade, risco e requisito de runtime explícitos.
+- [x] Definir uma arquitetura de autonomia comprovável que mantenha geração, plano, auditoria e referências no JBC, sem confundir catálogo de referências com modelos ou infraestrutura local incorporados.
+- [ ] Incorporar somente utilitários licenciados, estáticos e revisados que não executem código de terceiros, não instalem dependências e não exijam credenciais ou inferência remota.
+- [x] Extrair e registrar os requisitos verificáveis do PromptAIVideo reformulado, separando objetivos de arquitetura de alegações sobre modelos, tokens, contas ou infraestrutura não comprovadas.
+- [x] Estender o planejamento interno para representar cenas, keyframes, sincronização de áudio e revisão de qualidade como dados auditáveis, sem fabricar renderizações ou alegar análise visual não executada.
+- [x] Definir a composição de vídeo como uma etapa opcional e aprovada, condicionada a um runtime de mídia compatível, em vez de instalar ou executar ferramentas externas no servidor web.
+- [x] Preservar o 9router como proposta auditável para fallback, sem varrer tokens, criar contas, habilitar planos gratuitos, trocar credenciais ou encadear gerações automaticamente.

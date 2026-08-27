@@ -1,5 +1,6 @@
 import { int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 import { TASK_STATUSES } from "../shared/video";
+import { PRODUCTION_PACKAGE_STATUSES } from "../shared/productionPackage";
 import {
   IMPROVEMENT_PROPOSAL_STATUSES,
   MEMORY_SOURCE_TYPES,
@@ -71,6 +72,22 @@ export const videoScenes = mysqlTable("video_scenes", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+export const sceneProductionPackages = mysqlTable("scene_production_packages", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull().references(() => videoProjects.id, { onDelete: "cascade" }),
+  sceneId: int("sceneId").notNull().references(() => videoScenes.id, { onDelete: "cascade" }),
+  createdBy: int("createdBy").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: mysqlEnum("status", PRODUCTION_PACKAGE_STATUSES).notNull().default("rascunho"),
+  keyframePlan: json("keyframePlan").notNull(),
+  audioPlan: json("audioPlan").notNull(),
+  editDecisionList: json("editDecisionList").notNull(),
+  qualityGate: json("qualityGate").notNull(),
+  reviewNote: text("reviewNote"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("scene_production_packages_scene_unique").on(table.sceneId)]);
 
 export const projectVersions = mysqlTable("project_versions", {
   id: int("id").autoincrement().primaryKey(),
@@ -305,6 +322,7 @@ export type VideoProject = typeof videoProjects.$inferSelect;
 export type InsertVideoProject = typeof videoProjects.$inferInsert;
 export type VideoScene = typeof videoScenes.$inferSelect;
 export type InsertVideoScene = typeof videoScenes.$inferInsert;
+export type SceneProductionPackage = typeof sceneProductionPackages.$inferSelect;
 export type ProjectAsset = typeof projectAssets.$inferSelect;
 export type ReferenceAsset = typeof referenceAssets.$inferSelect;
 export type OrchestraEvent = typeof orchestraEvents.$inferSelect;

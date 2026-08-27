@@ -13,7 +13,9 @@ import {
   getVideoProject,
   listVideoProjects,
   recordOrchestraDelivery,
+  reviewSceneProductionPackage,
   replaceProjectPlan,
+  upsertSceneProductionPackage,
   updateScene,
   updateGenerationRunProgress,
   updateProjectScenesStatus,
@@ -28,6 +30,7 @@ import { rankMemories } from "../memory";
 import { listKnowledgeMemories, recordMemoryRetrieval } from "../orchestrationDb";
 import { canTransitionTaskStatus, TASK_STATUSES } from "../../shared/video";
 import { toSafeVideoErrorMessage } from "../../shared/videoErrorMessages";
+import { buildDefaultProductionPackage } from "../../shared/productionPackage";
 import { protectedProcedure, router } from "../_core/trpc";
 
 const taskStatusSchema = z.enum(TASK_STATUSES);
@@ -70,6 +73,29 @@ const manualPlanInput = z.object({
 const videoReferenceInput = z.object({
   assetId: z.number().int().positive(),
   audioDurationSeconds: z.number().int().min(2).max(15).optional(),
+});
+
+const productionPackageContentInput = z.object({
+  keyframePlan: z.object({
+    visualAnchor: z.string().trim().min(3).max(4_000),
+    cameraDirection: z.string().trim().min(3).max(2_000),
+    movementDirection: z.string().trim().min(3).max(2_000),
+  }),
+  audioPlan: z.object({
+    targetDurationSeconds: z.number().int().min(1).max(300),
+    sourceGuidance: z.string().trim().min(3).max(2_000),
+    synchronizationGuidance: z.string().trim().min(3).max(2_000),
+  }),
+  editDecisionList: z.object({
+    transition: z.string().trim().min(3).max(800),
+    pacingGuidance: z.string().trim().min(3).max(2_000),
+    colorGuidance: z.string().trim().min(3).max(2_000),
+  }),
+  qualityGate: z.object({
+    technicalCriteria: z.string().trim().min(3).max(2_000),
+    artisticCriteria: z.string().trim().min(3).max(2_000),
+    reviewerGuidance: z.string().trim().min(3).max(2_000),
+  }),
 });
 
 function fail(code: "NOT_FOUND" | "BAD_REQUEST" | "CONFLICT", message: string): never {
@@ -406,6 +432,35 @@ export const videoRouter = router({
         await publishEvent({ projectId: current.project.id, sceneId: input.sceneId, eventName: "video.reference_image.failed", entityType: "generation_run", entityId: runId, payload: { message, status: "com falha" } });
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
       }
+    }),
+  }),
+  production: router({
+    createDraft: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), sceneId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const scene = await getSceneForUser(input.sceneId, ctx.user.id);
+      if (!scene || scene.project.id !== input.projectId) fail("NOT_FOUND", "A cena informada não pertence a este projeto.");
+      const productionPackage = await upsertSceneProductionPackage({
+        projectId: input.projectId,
+        sceneId: input.sceneId,
+        userId: ctx.user.id,
+        content: buildDefaultProductionPackage(scene.scene),
+      });
+      if (!productionPackage) fail("NOT_FOUND", "Não foi possível preparar o pacote de produção desta cena.");
+      await publishEvent({ projectId: input.projectId, sceneId: input.sceneId, eventName: "video.production_package.drafted", entityType: "production_package", entityId: productionPackage.id, payload: { status: "rascunho", execution: "nenhuma", source: "cena revisável" } });
+      return productionPackage;
+    }),
+    save: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), sceneId: z.number().int().positive(), content: productionPackageContentInput })).mutation(async ({ ctx, input }) => {
+      const productionPackage = await upsertSceneProductionPackage({ projectId: input.projectId, sceneId: input.sceneId, userId: ctx.user.id, content: input.content });
+      if (!productionPackage) fail("NOT_FOUND", "A cena informada não pertence a este projeto.");
+      await publishEvent({ projectId: input.projectId, sceneId: input.sceneId, eventName: "video.production_package.updated", entityType: "production_package", entityId: productionPackage.id, payload: { status: "rascunho", execution: "nenhuma" } });
+      return productionPackage;
+    }),
+    review: protectedProcedure.input(z.object({ sceneId: z.number().int().positive(), status: z.enum(["aprovado", "rejeitado"]), reviewNote: z.string().trim().max(2_000).optional() })).mutation(async ({ ctx, input }) => {
+      const scene = await getSceneForUser(input.sceneId, ctx.user.id);
+      if (!scene) fail("NOT_FOUND", "Cena não encontrada.");
+      const productionPackage = await reviewSceneProductionPackage({ sceneId: input.sceneId, userId: ctx.user.id, status: input.status, reviewNote: input.reviewNote });
+      if (!productionPackage) fail("CONFLICT", "Crie o pacote de produção antes de revisá-lo.");
+      await publishEvent({ projectId: scene.project.id, sceneId: input.sceneId, eventName: "video.production_package.reviewed", entityType: "production_package", entityId: productionPackage.id, payload: { status: input.status, execution: "nenhuma" } });
+      return productionPackage;
     }),
   }),
   assets: router({

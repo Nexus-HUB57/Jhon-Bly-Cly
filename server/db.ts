@@ -11,11 +11,13 @@ import {
   projectAssets,
   projectVersions,
   referenceAssets,
+  sceneProductionPackages,
   users,
   videoProjects,
   videoScenes,
 } from "../drizzle/schema";
 import type { TaskStatus } from "../shared/video";
+import type { ProductionPackageContent, ProductionPackageStatus } from "../shared/productionPackage";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -139,14 +141,15 @@ export async function getProjectWorkspace(projectId: number, userId: number) {
   const project = await getVideoProject(projectId, userId);
   if (!project) return undefined;
   const db = requireDatabase(await getDb());
-  const [scenes, assets, versions, events, runs] = await Promise.all([
+  const [scenes, assets, versions, events, runs, productionPackages] = await Promise.all([
     db.select().from(videoScenes).where(eq(videoScenes.projectId, projectId)).orderBy(asc(videoScenes.sceneNumber)),
     db.select().from(projectAssets).where(eq(projectAssets.projectId, projectId)).orderBy(desc(projectAssets.createdAt)),
     db.select().from(projectVersions).where(eq(projectVersions.projectId, projectId)).orderBy(desc(projectVersions.versionNumber)),
     db.select().from(orchestraEvents).where(eq(orchestraEvents.projectId, projectId)).orderBy(desc(orchestraEvents.occurredAt)),
     db.select().from(generationRuns).where(eq(generationRuns.projectId, projectId)).orderBy(desc(generationRuns.startedAt)),
+    db.select().from(sceneProductionPackages).where(eq(sceneProductionPackages.projectId, projectId)).orderBy(desc(sceneProductionPackages.updatedAt)),
   ]);
-  return { project, scenes, assets, versions, events, runs };
+  return { project, scenes, assets, versions, events, runs, productionPackages };
 }
 
 export async function updateVideoProject(
@@ -189,6 +192,57 @@ export async function getSceneForUser(sceneId: number, userId: number) {
     .where(and(eq(videoScenes.id, sceneId), eq(videoProjects.userId, userId)))
     .limit(1);
   return result[0];
+}
+
+export async function getSceneProductionPackage(sceneId: number, userId: number) {
+  const scene = await getSceneForUser(sceneId, userId);
+  if (!scene) return undefined;
+  const db = requireDatabase(await getDb());
+  const result = await db.select().from(sceneProductionPackages).where(eq(sceneProductionPackages.sceneId, sceneId)).limit(1);
+  return result[0];
+}
+
+export async function upsertSceneProductionPackage(input: {
+  projectId: number;
+  sceneId: number;
+  userId: number;
+  content: ProductionPackageContent;
+}) {
+  const scene = await getSceneForUser(input.sceneId, input.userId);
+  if (!scene || scene.project.id !== input.projectId) return undefined;
+  const db = requireDatabase(await getDb());
+  const values = {
+    projectId: input.projectId,
+    sceneId: input.sceneId,
+    createdBy: input.userId,
+    status: "rascunho" as const,
+    keyframePlan: input.content.keyframePlan,
+    audioPlan: input.content.audioPlan,
+    editDecisionList: input.content.editDecisionList,
+    qualityGate: input.content.qualityGate,
+    reviewNote: null,
+    reviewedAt: null,
+  };
+  await db.insert(sceneProductionPackages).values(values).onDuplicateKeyUpdate({ set: { ...values, updatedAt: new Date() } });
+  return getSceneProductionPackage(input.sceneId, input.userId);
+}
+
+export async function reviewSceneProductionPackage(input: {
+  sceneId: number;
+  userId: number;
+  status: Extract<ProductionPackageStatus, "aprovado" | "rejeitado">;
+  reviewNote?: string;
+}) {
+  const current = await getSceneProductionPackage(input.sceneId, input.userId);
+  if (!current) return undefined;
+  const db = requireDatabase(await getDb());
+  await db.update(sceneProductionPackages).set({
+    status: input.status,
+    reviewNote: input.reviewNote?.trim() || null,
+    reviewedAt: new Date(),
+    updatedAt: new Date(),
+  }).where(eq(sceneProductionPackages.id, current.id));
+  return getSceneProductionPackage(input.sceneId, input.userId);
 }
 
 export async function updateScene(

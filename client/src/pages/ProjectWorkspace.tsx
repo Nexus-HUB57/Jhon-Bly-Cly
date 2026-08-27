@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import type { TaskStatus } from "@shared/video";
+import type { ProductionPackageContent } from "@shared/productionPackage";
 import { toSafeVideoErrorMessage } from "@shared/videoErrorMessages";
-import { ArrowLeft, Bot, CheckCircle2, ChevronRight, Clapperboard, Download, FileUp, ImagePlus, Loader2, Play, Save, Sparkles, Workflow } from "lucide-react";
+import { ArrowLeft, Bot, CheckCircle2, ChevronRight, Clapperboard, Download, FileUp, ImagePlus, Loader2, Music4, Play, Save, ShieldCheck, Sparkles, Workflow } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useRoute } from "wouter";
@@ -23,6 +24,54 @@ type SceneDraft = {
 
 const emptyDraft: SceneDraft = { title: "", narrative: "", camera: "", visualPrompt: "", productionPrompt: "", storyboardPrompt: "" };
 
+type ProductionPackageRecord = {
+  id: number;
+  sceneId: number;
+  status: "rascunho" | "aguardando revisão" | "aprovado" | "rejeitado";
+  keyframePlan: unknown;
+  audioPlan: unknown;
+  editDecisionList: unknown;
+  qualityGate: unknown;
+  reviewNote: string | null;
+};
+
+function readText(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function toProductionDraft(value: ProductionPackageRecord): ProductionPackageContent {
+  const keyframePlan = asRecord(value.keyframePlan);
+  const audioPlan = asRecord(value.audioPlan);
+  const editDecisionList = asRecord(value.editDecisionList);
+  const qualityGate = asRecord(value.qualityGate);
+  return {
+    keyframePlan: {
+      visualAnchor: readText(keyframePlan.visualAnchor, "Definir âncora visual antes da execução."),
+      cameraDirection: readText(keyframePlan.cameraDirection, "Definir direção de câmera antes da execução."),
+      movementDirection: readText(keyframePlan.movementDirection, "Confirmar movimento na revisão humana."),
+    },
+    audioPlan: {
+      targetDurationSeconds: typeof audioPlan.targetDurationSeconds === "number" ? audioPlan.targetDurationSeconds : 8,
+      sourceGuidance: readText(audioPlan.sourceGuidance, "Associar somente áudio de referência autorizado."),
+      synchronizationGuidance: readText(audioPlan.synchronizationGuidance, "Validar sincronização antes de qualquer composição."),
+    },
+    editDecisionList: {
+      transition: readText(editDecisionList.transition, "Definir transição após a aprovação dos clipes reais."),
+      pacingGuidance: readText(editDecisionList.pacingGuidance, "Definir ritmo na revisão humana."),
+      colorGuidance: readText(editDecisionList.colorGuidance, "Manter continuidade de cor entre cenas aprovadas."),
+    },
+    qualityGate: {
+      technicalCriteria: readText(qualityGate.technicalCriteria, "Revisar duração, formato, nitidez e áudio."),
+      artisticCriteria: readText(qualityGate.artisticCriteria, "Revisar narrativa, enquadramento e identidade visual."),
+      reviewerGuidance: readText(qualityGate.reviewerGuidance, "Registrar evidências de revisão humana."),
+    },
+  };
+}
+
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <section className={`glass-panel ${className}`}>{children}</section>;
 }
@@ -35,8 +84,11 @@ export default function ProjectWorkspace() {
   const { data, isLoading, error } = trpc.video.projects.get.useQuery({ projectId }, { enabled: Number.isFinite(projectId) && projectId > 0 });
   const [selectedSceneId, setSelectedSceneId] = useState<number | null>(null);
   const [draft, setDraft] = useState<SceneDraft>(emptyDraft);
+  const [productionDraft, setProductionDraft] = useState<ProductionPackageContent | null>(null);
+  const [reviewNote, setReviewNote] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const selectedScene = useMemo(() => data?.scenes.find(scene => scene.id === selectedSceneId) ?? data?.scenes[0], [data?.scenes, selectedSceneId]);
+  const selectedProductionPackage = useMemo(() => (data?.productionPackages as ProductionPackageRecord[] | undefined)?.find(item => item.sceneId === selectedScene?.id), [data?.productionPackages, selectedScene?.id]);
 
   useEffect(() => {
     if (!selectedScene) return;
@@ -51,6 +103,11 @@ export default function ProjectWorkspace() {
     });
   }, [selectedScene?.id]);
 
+  useEffect(() => {
+    setProductionDraft(selectedProductionPackage ? toProductionDraft(selectedProductionPackage) : null);
+    setReviewNote(selectedProductionPackage?.reviewNote ?? "");
+  }, [selectedProductionPackage?.id]);
+
   const refresh = () => utils.video.projects.get.invalidate({ projectId });
   const plan = trpc.video.projects.plan.useMutation({ onSuccess: async result => { toast.success(`${result.scenesCreated} cenas prontas para revisão.`); await refresh(); }, onError: error => toast.error(error.message) });
   const manualPlan = trpc.video.projects.createManualPlan.useMutation({ onSuccess: async () => { toast.success("Plano manual pronto para revisão."); await refresh(); }, onError: error => toast.error(error.message) });
@@ -59,6 +116,9 @@ export default function ProjectWorkspace() {
   const retryFailed = trpc.video.projects.retryFailed.useMutation({ onSuccess: async () => { toast.success("Projeto retomado como rascunho. Revise o plano antes de gerar novamente."); await refresh(); }, onError: error => toast.error(error.message) });
   const saveScene = trpc.video.scenes.update.useMutation({ onSuccess: async () => { toast.success("Cena atualizada."); await refresh(); }, onError: error => toast.error(error.message) });
   const referenceImage = trpc.video.scenes.generateReference.useMutation({ onSuccess: async () => { toast.success("Imagem de referência gerada."); await refresh(); }, onError: error => toast.error(error.message) });
+  const createProductionDraft = trpc.video.production.createDraft.useMutation({ onSuccess: async () => { toast.success("Pacote de produção criado para revisão."); await refresh(); }, onError: error => toast.error(error.message) });
+  const saveProductionPackage = trpc.video.production.save.useMutation({ onSuccess: async () => { toast.success("Pacote de produção salvo como rascunho."); await refresh(); }, onError: error => toast.error(error.message) });
+  const reviewProductionPackage = trpc.video.production.review.useMutation({ onSuccess: async result => { toast.success(`Pacote ${result.status}. Nenhuma mídia foi gerada.`); await refresh(); }, onError: error => toast.error(error.message) });
   const exportManifest = trpc.video.exports.manifest.useMutation({ onSuccess: async result => { toast.success("Manifesto de produção exportado."); window.open(result.url, "_blank", "noopener,noreferrer"); await refresh(); }, onError: error => toast.error(error.message) });
   const upload = trpc.video.assets.upload.useMutation({ onSuccess: async () => { toast.success("Ativo armazenado e associado ao projeto."); await refresh(); }, onError: error => toast.error(error.message) });
 
@@ -133,6 +193,7 @@ export default function ProjectWorkspace() {
         <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-2xl bg-white/70 p-1.5 shadow-sm ring-1 ring-slate-200/70">
           <TabsTrigger value="review" className="rounded-xl px-4 py-2.5 font-bold">Revisão</TabsTrigger>
           <TabsTrigger value="storyboard" className="rounded-xl px-4 py-2.5 font-bold">Storyboard</TabsTrigger>
+          <TabsTrigger value="production" className="rounded-xl px-4 py-2.5 font-bold">Pacote de produção</TabsTrigger>
           <TabsTrigger value="assets" className="rounded-xl px-4 py-2.5 font-bold">Ativos</TabsTrigger>
           <TabsTrigger value="results" className="rounded-xl px-4 py-2.5 font-bold">Resultados</TabsTrigger>
           <TabsTrigger value="orchestra" className="rounded-xl px-4 py-2.5 font-bold">Nexus_Orchestra</TabsTrigger>
@@ -153,6 +214,10 @@ export default function ProjectWorkspace() {
 
         <TabsContent value="storyboard" className="mt-0"><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{scenes.length ? scenes.map(scene => <GlassPanel key={scene.id} className="overflow-hidden"><div className="storyboard-frame">{scene.referenceImageUrl ? <img src={scene.referenceImageUrl} alt={`Referência visual da cena ${scene.sceneNumber}`} /> : <><div className="iso-surface iso-surface-blue left-7 top-7" /><div className="iso-surface iso-surface-coral bottom-9 right-10" /><Clapperboard className="relative h-7 w-7 text-slate-500" /></>}</div><div className="p-5"><div className="flex items-center justify-between gap-3"><span className="eyebrow">CENA {String(scene.sceneNumber).padStart(2, "0")}</span><StatusPill status={scene.status as TaskStatus} /></div><h3 className="mt-2 font-black">{scene.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{scene.narrative}</p><Button variant="ghost" className="mt-3 h-auto px-0 text-cyan-700 hover:bg-transparent hover:text-cyan-900" onClick={() => { setSelectedSceneId(scene.id); document.querySelector<HTMLButtonElement>('[data-slot="tabs-trigger"][value="review"]')?.click(); }}>Revisar cena <ChevronRight className="ml-1 h-4 w-4" /></Button></div></GlassPanel>) : <GlassPanel className="col-span-full p-9 text-center"><p className="font-bold">O storyboard aparecerá após o planejamento.</p></GlassPanel>}</div></TabsContent>
 
+        <TabsContent value="production" className="mt-0">
+          {!selectedScene ? <GlassPanel className="p-9 text-center"><p className="font-bold">Crie ou revise uma cena antes de preparar o pacote de produção.</p></GlassPanel> : !selectedProductionPackage || !productionDraft ? <GlassPanel className="relative overflow-hidden p-8 md:p-10"><div className="iso-surface iso-surface-coral -right-10 -top-10" /><div className="relative max-w-2xl"><span className="eyebrow">PRÉ-PRODUÇÃO AUDITÁVEL</span><h2 className="mt-2 text-2xl font-black tracking-tight">Converta a cena em um pacote revisável.</h2><p className="mt-3 text-sm leading-6 text-slate-600">O pacote registra keyframe, áudio, decisões de montagem e critérios de qualidade. Ele não cria mídia, não chama modelos e não inicia composição.</p><Button className="mt-6 bg-slate-950 text-white hover:bg-slate-800" onClick={() => createProductionDraft.mutate({ projectId, sceneId: selectedScene.id })} disabled={createProductionDraft.isPending}>{createProductionDraft.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Clapperboard className="mr-2 h-4 w-4" />}Criar pacote da cena {selectedScene.sceneNumber}</Button></div></GlassPanel> : <div className="grid gap-5 xl:grid-cols-[1fr_0.38fr]"><div className="grid gap-5"><GlassPanel className="p-6"><div className="flex flex-wrap items-center justify-between gap-4"><div><span className="eyebrow">CENA {String(selectedScene.sceneNumber).padStart(2, "0")}</span><h2 className="mt-1 text-xl font-black">Keyframe e movimento</h2></div><ProductionStatusPill status={selectedProductionPackage.status} /></div><div className="mt-5 grid gap-5"><ProductionField label="Âncora visual" value={productionDraft.keyframePlan.visualAnchor} onChange={value => setProductionDraft({ ...productionDraft, keyframePlan: { ...productionDraft.keyframePlan, visualAnchor: value } })} rows={4} /><div className="grid gap-5 md:grid-cols-2"><ProductionField label="Direção de câmera" value={productionDraft.keyframePlan.cameraDirection} onChange={value => setProductionDraft({ ...productionDraft, keyframePlan: { ...productionDraft.keyframePlan, cameraDirection: value } })} /><ProductionField label="Movimento e continuidade" value={productionDraft.keyframePlan.movementDirection} onChange={value => setProductionDraft({ ...productionDraft, keyframePlan: { ...productionDraft.keyframePlan, movementDirection: value } })} /></div></div></GlassPanel><div className="grid gap-5 md:grid-cols-2"><GlassPanel className="p-6"><div className="flex items-center gap-2"><Music4 className="h-4 w-4 text-cyan-700" /><h2 className="font-black">Plano de áudio</h2></div><div className="mt-5 grid gap-4"><div><Label htmlFor="audio-duration">Duração alvo (s)</Label><Input id="audio-duration" type="number" min={1} max={300} className="mt-2 bg-white/80" value={productionDraft.audioPlan.targetDurationSeconds} onChange={event => setProductionDraft({ ...productionDraft, audioPlan: { ...productionDraft.audioPlan, targetDurationSeconds: Number(event.target.value) || 1 } })} /></div><ProductionField label="Fonte autorizada" value={productionDraft.audioPlan.sourceGuidance} onChange={value => setProductionDraft({ ...productionDraft, audioPlan: { ...productionDraft.audioPlan, sourceGuidance: value } })} /><ProductionField label="Sincronização" value={productionDraft.audioPlan.synchronizationGuidance} onChange={value => setProductionDraft({ ...productionDraft, audioPlan: { ...productionDraft.audioPlan, synchronizationGuidance: value } })} /></div></GlassPanel><GlassPanel className="p-6"><div className="flex items-center gap-2"><Workflow className="h-4 w-4 text-blue-700" /><h2 className="font-black">Montagem proposta</h2></div><div className="mt-5 grid gap-4"><ProductionField label="Transição" value={productionDraft.editDecisionList.transition} onChange={value => setProductionDraft({ ...productionDraft, editDecisionList: { ...productionDraft.editDecisionList, transition: value } })} /><ProductionField label="Ritmo" value={productionDraft.editDecisionList.pacingGuidance} onChange={value => setProductionDraft({ ...productionDraft, editDecisionList: { ...productionDraft.editDecisionList, pacingGuidance: value } })} /><ProductionField label="Cor" value={productionDraft.editDecisionList.colorGuidance} onChange={value => setProductionDraft({ ...productionDraft, editDecisionList: { ...productionDraft.editDecisionList, colorGuidance: value } })} /></div></GlassPanel></div><GlassPanel className="p-6"><div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-700" /><h2 className="font-black">Gate de qualidade</h2></div><div className="mt-5 grid gap-5 md:grid-cols-3"><ProductionField label="Critérios técnicos" value={productionDraft.qualityGate.technicalCriteria} onChange={value => setProductionDraft({ ...productionDraft, qualityGate: { ...productionDraft.qualityGate, technicalCriteria: value } })} /><ProductionField label="Critérios artísticos" value={productionDraft.qualityGate.artisticCriteria} onChange={value => setProductionDraft({ ...productionDraft, qualityGate: { ...productionDraft.qualityGate, artisticCriteria: value } })} /><ProductionField label="Orientação ao revisor" value={productionDraft.qualityGate.reviewerGuidance} onChange={value => setProductionDraft({ ...productionDraft, qualityGate: { ...productionDraft.qualityGate, reviewerGuidance: value } })} /></div><Button className="mt-6 bg-slate-950 text-white hover:bg-slate-800" onClick={() => saveProductionPackage.mutate({ projectId, sceneId: selectedScene.id, content: productionDraft })} disabled={saveProductionPackage.isPending}>{saveProductionPackage.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}Salvar rascunho</Button></GlassPanel></div><GlassPanel className="h-fit p-6"><span className="eyebrow">REVISÃO HUMANA</span><h2 className="mt-2 text-xl font-black">Aprovação não executa mídia.</h2><p className="mt-3 text-sm leading-6 text-slate-600">A decisão documenta a preparação. Geração, fallback e montagem continuam em procedimentos separados e autorizados.</p><div className="mt-5"><Label htmlFor="production-review-note">Nota de revisão</Label><Textarea id="production-review-note" className="mt-2 min-h-32 bg-white/80" value={reviewNote} onChange={event => setReviewNote(event.target.value)} /></div><div className="mt-5 grid gap-2"><Button className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => reviewProductionPackage.mutate({ sceneId: selectedScene.id, status: "aprovado", reviewNote })} disabled={reviewProductionPackage.isPending}>Aprovar pacote</Button><Button variant="outline" className="border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100" onClick={() => reviewProductionPackage.mutate({ sceneId: selectedScene.id, status: "rejeitado", reviewNote })} disabled={reviewProductionPackage.isPending}>Rejeitar para revisão</Button></div></GlassPanel></div>}
+        </TabsContent>
+
         <TabsContent value="assets" className="mt-0"><div className="grid gap-5 xl:grid-cols-[0.75fr_1.25fr]"><GlassPanel className="p-6"><span className="eyebrow">BIBLIOTECA SEGURA</span><h2 className="mt-2 text-xl font-black">Arquivos de referência</h2><p className="mt-2 text-sm leading-6 text-slate-600">Envie imagens, documentos ou mídia de apoio. O arquivo é armazenado no projeto e pode ser associado à cena ativa.</p><div className="mt-6 flex min-h-36 flex-col items-center justify-center rounded-2xl border border-dashed border-cyan-300 bg-cyan-50/40 p-5 text-center"><FileUp className="mb-3 h-6 w-6 text-cyan-700" /><Label htmlFor="asset-file" className="text-sm font-bold text-cyan-800">{isUploading ? "Armazenando ativo…" : "Selecionar arquivo"}</Label><small className="mt-1 text-xs text-slate-500">até 10 MB</small><Input id="asset-file" type="file" className="mt-4 max-w-sm cursor-pointer bg-white/90 text-sm" disabled={isUploading} onChange={event => onUpload(event.target.files?.[0])} /></div></GlassPanel><GlassPanel className="p-3">{assets.length ? <div className="divide-y divide-slate-100">{assets.map(asset => <div key={asset.id} className="flex items-center gap-3 p-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500"><FileUp className="h-4 w-4" /></div><div className="min-w-0 flex-1"><b className="block truncate text-sm">{asset.name}</b><small className="text-xs text-slate-500">{asset.kind} · {asset.mimeType}</small></div><a href={asset.url} target="_blank" rel="noreferrer" className="text-xs font-bold text-cyan-700">Abrir</a></div>)}</div> : <div className="grid min-h-64 place-items-center text-center text-sm text-slate-500">Nenhum ativo associado a este projeto.</div>}</GlassPanel></div></TabsContent>
 
         <TabsContent value="results" className="mt-0"><ResultsPanel status={project.status as TaskStatus} runs={runs} assets={assets} onExport={() => exportManifest.mutate({ projectId })} exporting={exportManifest.isPending} onPoll={activeVideoRun ? () => pollGeneration.mutate({ projectId, runId: activeVideoRun.id }) : undefined} polling={pollGeneration.isPending} /></TabsContent>
@@ -161,6 +226,20 @@ export default function ProjectWorkspace() {
       </Tabs>
     </div>
   );
+}
+
+function ProductionField({ label, value, onChange, rows = 3 }: { label: string; value: string; onChange: (value: string) => void; rows?: number }) {
+  return <div><Label>{label}</Label><Textarea className="mt-2 min-h-24 bg-white/80" rows={rows} value={value} onChange={event => onChange(event.target.value)} /></div>;
+}
+
+function ProductionStatusPill({ status }: { status: ProductionPackageRecord["status"] }) {
+  const styles = {
+    rascunho: "bg-slate-100 text-slate-700",
+    "aguardando revisão": "bg-amber-100 text-amber-800",
+    aprovado: "bg-emerald-100 text-emerald-800",
+    rejeitado: "bg-rose-100 text-rose-800",
+  };
+  return <span className={`rounded-full px-3 py-1 text-xs font-black ${styles[status]}`}>{status}</span>;
 }
 
 function ResultsPanel({ status, runs, assets, onExport, exporting, onPoll, polling }: { status: TaskStatus; runs: Array<{ id: number; runType: string; status: string; output: unknown; errorMessage: string | null; startedAt: Date; finishedAt: Date | null }>; assets: Array<{ id: number; name: string; kind: string; mimeType: string; url: string; createdAt: Date }>; onExport: () => void; exporting: boolean; onPoll?: () => void; polling: boolean }) {

@@ -11,3 +11,13 @@ Foi registrada uma única proposta pela ação **Registrar seleção para revis�
 > A prévia não executa adaptadores, repositórios, ferramentas, conectores nem chamadas externas. Ação posterior registra somente uma seleção auditável para revisão humana.
 
 O painel também preservou os controles de ciclo, a telemetria por papéis e o estado dos provedores. O projeto KTD continuou disponível no ambiente de desenvolvimento; sua falha histórica de saldo do provedor de vídeo não foi ocultada ou reinterpretada como resultado produzido.
+
+Em 27/08/2026, o painel autenticado permaneceu acessível, exibindo a alternância seguinte e o controle obrigatório de proposta. Foi solicitada uma nova rota para verificar condições de geração do KTD; essa intenção ainda exige registro de proposta e aprovação humana separada antes de qualquer consulta autenticada de saldo. O roteador não é um mecanismo de cobrança, consulta de conta ou execução de vídeo.
+
+Os controles visíveis de capacidade, teto de risco e pedido confirmaram que o painel pode classificar uma solicitação de mídia generativa para revisão, porém o estado de controle exibido continuou limitado a proposta. A referência de execução anterior ainda registra o projeto KTD como `com falha` por saldo insuficiente, sem indicar saldo novo ou resultado audiovisual produzido.
+
+Durante a preparação da nova solicitação, a mudança de capacidade atualizou apenas a prévia local de candidatos elegíveis e não produziu chamadas externas nem mudanças de estado no projeto KTD. A seleção será registrada somente quando o pedido revisável estiver completo.
+
+Na capacidade `mídia generativa`, com teto de risco médio, a prévia apresentou `MiniMax-AI/MiniMax-MCP` como o único adaptador elegível entre os 19 inventariados. O pedido preparado limita-se a verificar de maneira oficial e auditável a disponibilidade de saldo para uma única prova KTD de oito segundos; ele veda expressamente geração, cobrança e chamada externa antes de uma aprovação humana registrada.
+
+O operador registrou a seleção como proposta. A auditoria passou a mostrar a alternância `1`, uma única evidência `minimax-native-media`, estado `proposta` e o evento do Planner `Seleção 9router` em `aguardando revisão`. O projeto KTD não foi modificado e nenhuma requisição ao MiniMax, cobrança ou produção de vídeo foi realizada nessa ação.
