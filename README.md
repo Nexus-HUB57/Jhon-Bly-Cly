@@ -48,3 +48,7 @@ Sem uma URL configurada, o aplicativo preserva o evento e informa que a entrega 
 ## Fusão modular do ecossistema
 
 O painel **Fusão** inventaria e classifica fontes externas por licença, risco e rota de integração. Ele expõe conectores preparados em modo seguro, preserva a intenção de configuração por usuário e gera um envelope auditável para o Nexus_Orchestra. Fontes de prompts internos/vazados, rotas de acesso não autorizado ou dependências sem compatibilidade confirmada permanecem bloqueadas. Consulte [`docs/FUSAO_ECOSSISTEMA.md`](docs/FUSAO_ECOSSISTEMA.md) para a matriz de decisões e o contrato de sincronização.
+
+## Referências para agentes
+
+O painel **Referências** mantém uma biblioteca global de áudio, vídeo, imagem, texto e documentos de até 50 MB por arquivo. Os itens ficam em S3, recebem metadados de uso e são incluídos como contexto no planejamento audiovisual. Consulte [`docs/REFERENCIAS.md`](docs/REFERENCIAS.md) para os formatos aceitos e o fluxo de uso pelos agentes.

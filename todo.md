@@ -21,3 +21,59 @@
 - [x] Implementar uma camada explícita de conectores seguros com elegibilidade, BYOK pendente, bloqueios por risco/licença e contrato de sincronização.
 - [x] Adicionar testes para catálogo, conectores seguros e bloqueio de fontes sensíveis ou instruções internas.
 - [x] Cobrir a nova camada com testes, validar build, salvar checkpoint e comitar a fusão no repositório Nexus-HUB57/Jhon-Bly-Cly.
+- [ ] Preparar o persona KTD e a faixa enviada como ativos de referência para o teste audiovisual de 8 segundos.
+- [ ] Gerar um vídeo experimental live action de 8 segundos com performance de estúdio e atmosfera musical coerente com a referência.
+- [ ] Validar o vídeo experimental, registrar o resultado no projeto e sincronizar a entrega no repositório Nexus-HUB57/Jhon-Bly-Cly.
+- [ ] Registrar o experimento KTD como projeto persistido e executar a geração exclusivamente pelo backend do Jhon Bly Cly.
+- [x] Configurar a credencial oficial do conector audiovisual no sistema antes do disparo de vídeo.
+- [ ] Validar o resultado, as execuções e os eventos de orquestração da geração interna do sistema.
+- [x] Validar em sessão autenticada a página inicial após a correção da navegação e confirmar ausência do aviso de chaves duplicadas.
+- [x] Adicionar cobertura específica que garanta chaves únicas na navegação do DashboardLayout.
+- [x] Validar a home em sessão autenticada independente e registrar evidência de runtime sem o aviso de chaves duplicadas.
+- [x] Segmentar os logs do console pós-correção e localizar outra lista com chave duplicada caso o aviso persista.
+- [x] Registrar evidência explícita de sessão autenticada no browser controlado após a correção da navegação.
+- [x] Documentar as regras de integração JBCx19: nenhum segredo descoberto por varredura, uso exclusivo de credenciais oficiais e proteção de código por controles de acesso e versionamento.
+- [x] Completar contratos de conectores JBCx19 para fontes elegíveis, com telemetria auditável e sem execução de código externo não revisado.
+- [x] Solicitar apenas as credenciais oficiais necessárias para conectores escolhidos pelo proprietário e validar sua presença sem expor valores.
+- [x] Mapear contratos e adaptadores públicos dos 19 repositórios, separando-os de credenciais e acessos de produção.
+- [x] Exibir no JBCx19 o estado de ativação de cada adaptador e bloquear qualquer execução sem credencial oficial ou infraestrutura autorizada.
+- [x] Consolidar especificações públicas autorizadas para adaptadores nativos de agente, mídia, modelo local e manifesto de plugins.
+- [x] Implementar adaptadores JBCx19 configuráveis que permaneçam inativos até OAuth, credencial oficial ou host autorizado.
+- [x] Inventariar apenas os mecanismos públicos de autenticação e nomes de variáveis de ambiente dos 19 repositórios, sem registrar ou expor valores de segredos.
+- [x] Publicar no JBCx19 uma matriz de ativação que solicite credenciais oficiais por conector, sem reutilizar valores encontrados em código-fonte.
+- [x] Documentar e testar a proibição de coleta de segredos, execução dinâmica e instalação automática de código de terceiros no JBCx19.
+- [x] Completar o adaptador público de mídia com validação de credencial oficial, sem persistir ou expor o segredo.
+- [x] Configurar e validar a credencial oficial OpenAI como segredo protegido do JBCx19, sem reproduzir seu valor.
+- [x] Documentar que scripts de coleta, classificação ou reutilização de tokens encontrados em repositórios não fazem parte do JBCx19.
+- [x] Configurar e validar um conector Llama por endpoint oficial de provedor ou host autorizado, sem expor credenciais.
+- [x] Validar tecnicamente os 19 repositórios clonados, incluindo estrutura, arquivos de automação, licenças, dependências e superfície de integração segura.
+- [x] Persistir e exibir no Studio JBC um relatório end to end da fusão com estado de elegibilidade e bloqueios por risco.
+- [x] Modelar uma biblioteca global de Referências para ativos de agentes audiovisuais, com tamanho máximo de 50 MB e metadados de uso.
+- [x] Implementar upload seguro de referências em S3 para formatos audiovisuais, imagens, texto e documentos permitidos.
+- [x] Construir o painel Referências com upload, busca, filtros, associação por finalidade e estados acessíveis.
+- [ ] Validar o painel, os limites de upload, a fusão técnica, testes, build, checkpoint e commit no repositório Nexus-HUB57/Jhon-Bly-Cly.
+- [x] Diferenciar na matriz JBCx19 os adaptadores executáveis configuráveis dos itens exclusivamente catalogados ou referenciais.
+- [x] Validar no painel Fusão a política explícita contra token harvesting e reutilização de credenciais de repositórios.
+- [ ] Reconfirmar a sessão autenticada no browser controlado após a correção da navegação, caso o usuário conclua o acesso solicitado.
+- [x] Mapear os requisitos de autenticação pública de Z.AI, Alibaba Cloud, DigitalOcean, Google AI Studio e Evomap.
+- [ ] Registrar e validar segredos oficiais dos novos provedores no armazenamento protegido, sem expor seus valores.
+- [ ] Isolar e corrigir somente uma credencial malformada entre os cinco novos provedores, preservando os quatro valores aprovados.
+- [x] Implementar e expor uma flag de runtime por provedor, mantendo ativos somente MiniMax, OpenAI, Llama, Z.AI e Google AI Studio e os demais explicitamente inativos.
+- [x] Cobrir por teste os provedores aprovados e os provedores desabilitados no runtime JBCx19.
+- [ ] Validar testes, tipagem, build, diffs e sincronizar somente acréscimos complementares ao repositório sem sobrescrever histórico ou arquivos existentes.
+- [x] Definir governança do workflow contínuo: limites de execução, idempotência, rate limits, auditoria, interrupção e aprovação humana para ações externas ou alterações de código.
+- [x] Implementar o endpoint autenticado Nexus_Orchestra com verificação de assinatura e outbox de eventos recebidos.
+- [x] Modelar memória persistente, documentos recuperáveis e avaliações de melhoria com recuperação contextual sem autoexecução irrestrita.
+- [ ] Implementar ciclos periódicos aprováveis de observação, síntese, proposta e avaliação usando LLM server-side.
+- [x] Integrar um painel de memória, execução e propostas de melhoria ao Studio JBC.
+- [ ] Executar smoke test, teste de estresse com limites seguros, testes automatizados, checkpoint e commit aditivo da orquestração.
+- [ ] Implementar ciclo periódico governado com execução idempotente, pausa, limite de taxa, orçamento e aprovação humana para efeitos externos.
+- [x] Implementar endpoint Nexus_Orchestra autenticado, com verificação de assinatura, rejeição de payloads inválidos e outbox de recebimento.
+- [x] Persistir memória, recuperação contextual e propostas de melhoria como dados revisáveis, nunca como instruções executáveis autônomas.
+- [x] Validar adaptadores generativos por contrato, sem integrar varredura de segredos, autoexecução de comandos ou autoalteração de código.
+- [x] Implementar ingestão e indexação segura de textos e documentos de Referências como memória recuperável auditável, com limites e sanitização.
+- [x] Adicionar estados explícitos de erro e nova tentativa para as consultas principais do painel Orquestração, com smoke test autenticado da tela.
+- [ ] Após checkpoint e publicação, registrar e validar uma tarefa Heartbeat real para `/api/scheduled/memory-cycle`, persistindo o `taskUid` e comprovando a idempotência.
+- [x] Executar e registrar um smoke test autenticado da rota `/orchestration`, cobrindo dashboard, provedores, adaptadores e os estados de erro/retry.
+- [x] Executar smoke test visual autenticado real da rota `/orchestration`, cobrindo o carregamento de dashboard, provedores e adaptadores.
+- [x] Adicionar cobertura verificável dos estados visuais de erro e nova tentativa da página `/orchestration`.

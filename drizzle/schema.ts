@@ -1,5 +1,11 @@
 import { int, json, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 import { TASK_STATUSES } from "../shared/video";
+import {
+  IMPROVEMENT_PROPOSAL_STATUSES,
+  MEMORY_SOURCE_TYPES,
+  ORCHESTRATION_CYCLE_STATUSES,
+  ORCHESTRA_INBOX_STATUSES,
+} from "../shared/orchestrationPolicy";
 
 /**
  * Core user table backing auth flow.
@@ -85,6 +91,20 @@ export const projectAssets = mysqlTable("project_assets", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const referenceAssets = mysqlTable("reference_assets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  storageKey: varchar("storageKey", { length: 1024 }).notNull(),
+  url: varchar("url", { length: 2048 }).notNull(),
+  mimeType: varchar("mimeType", { length: 160 }).notNull(),
+  byteSize: int("byteSize").notNull(),
+  category: mysqlEnum("category", ["imagem", "áudio", "vídeo", "documento", "texto"]).notNull(),
+  agentUse: varchar("agentUse", { length: 120 }).notNull().default("referência criativa"),
+  purpose: text("purpose"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const generationRuns = mysqlTable("generation_runs", {
   id: int("id").autoincrement().primaryKey(),
   projectId: int("projectId").notNull().references(() => videoProjects.id, { onDelete: "cascade" }),
@@ -134,11 +154,99 @@ export const fusionSyncEvents = mysqlTable("fusion_sync_events", {
   occurredAt: timestamp("occurredAt").defaultNow().notNull(),
 });
 
+export const knowledgeMemories = mysqlTable("knowledge_memories", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  projectId: int("projectId").references(() => videoProjects.id, { onDelete: "set null" }),
+  sourceType: mysqlEnum("sourceType", MEMORY_SOURCE_TYPES).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  summary: text("summary"),
+  tags: json("tags"),
+  sourceReference: varchar("sourceReference", { length: 512 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const memoryRetrievals = mysqlTable("memory_retrievals", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  projectId: int("projectId").references(() => videoProjects.id, { onDelete: "set null" }),
+  query: text("query").notNull(),
+  resultCount: int("resultCount").notNull().default(0),
+  retrievedMemoryIds: json("retrievedMemoryIds").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const orchestrationCycles = mysqlTable("orchestration_cycles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  status: mysqlEnum("status", ORCHESTRATION_CYCLE_STATUSES).notNull().default("pausado"),
+  scheduleCron: varchar("scheduleCron", { length: 120 }).notNull().default("0 0 */6 * * *"),
+  taskUid: varchar("taskUid", { length: 255 }),
+  minIntervalMinutes: int("minIntervalMinutes").notNull().default(15),
+  maxEvidencePerCycle: int("maxEvidencePerCycle").notNull().default(12),
+  lastStartedAt: timestamp("lastStartedAt"),
+  lastFinishedAt: timestamp("lastFinishedAt"),
+  lastError: text("lastError"),
+  pausedReason: text("pausedReason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("orchestration_cycles_user_unique").on(table.userId), uniqueIndex("orchestration_cycles_task_unique").on(table.taskUid)]);
+
+export const orchestrationCycleRuns = mysqlTable("orchestration_cycle_runs", {
+  id: int("id").autoincrement().primaryKey(),
+  cycleId: int("cycleId").notNull().references(() => orchestrationCycles.id, { onDelete: "cascade" }),
+  trigger: mysqlEnum("trigger", ["manual", "agendado", "evento"]).notNull(),
+  idempotencyKey: varchar("idempotencyKey", { length: 255 }).notNull(),
+  status: mysqlEnum("status", ORCHESTRATION_CYCLE_STATUSES).notNull().default("pronto"),
+  evidenceCount: int("evidenceCount").notNull().default(0),
+  retrievedCount: int("retrievedCount").notNull().default(0),
+  summary: text("summary"),
+  errorMessage: text("errorMessage"),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  finishedAt: timestamp("finishedAt"),
+}, table => [uniqueIndex("orchestration_cycle_runs_idempotency_unique").on(table.idempotencyKey)]);
+
+export const improvementProposals = mysqlTable("improvement_proposals", {
+  id: int("id").autoincrement().primaryKey(),
+  cycleRunId: int("cycleRunId").notNull().references(() => orchestrationCycleRuns.id, { onDelete: "cascade" }),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  rationale: text("rationale").notNull(),
+  evidence: json("evidence").notNull(),
+  proposedAction: text("proposedAction").notNull(),
+  riskLevel: mysqlEnum("riskLevel", ["baixo", "médio", "alto"]).notNull().default("médio"),
+  status: mysqlEnum("status", IMPROVEMENT_PROPOSAL_STATUSES).notNull().default("pendente"),
+  reviewedBy: int("reviewedBy").references(() => users.id, { onDelete: "set null" }),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewNote: text("reviewNote"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const orchestraInboxEvents = mysqlTable("orchestra_inbox_events", {
+  id: int("id").autoincrement().primaryKey(),
+  eventId: varchar("eventId", { length: 255 }).notNull(),
+  eventName: varchar("eventName", { length: 160 }).notNull(),
+  source: varchar("source", { length: 160 }).notNull(),
+  occurredAt: timestamp("occurredAt").notNull(),
+  receivedAt: timestamp("receivedAt").defaultNow().notNull(),
+  payload: json("payload").notNull(),
+  status: mysqlEnum("status", ORCHESTRA_INBOX_STATUSES).notNull().default("recebido"),
+  verificationError: text("verificationError"),
+}, table => [uniqueIndex("orchestra_inbox_events_event_unique").on(table.eventId)]);
+
 export type VideoProject = typeof videoProjects.$inferSelect;
 export type InsertVideoProject = typeof videoProjects.$inferInsert;
 export type VideoScene = typeof videoScenes.$inferSelect;
 export type InsertVideoScene = typeof videoScenes.$inferInsert;
 export type ProjectAsset = typeof projectAssets.$inferSelect;
+export type ReferenceAsset = typeof referenceAssets.$inferSelect;
 export type OrchestraEvent = typeof orchestraEvents.$inferSelect;
 export type FusionConnectorProfile = typeof fusionConnectorProfiles.$inferSelect;
 export type FusionSyncEvent = typeof fusionSyncEvents.$inferSelect;
+export type KnowledgeMemory = typeof knowledgeMemories.$inferSelect;
+export type OrchestrationCycle = typeof orchestrationCycles.$inferSelect;
+export type OrchestrationCycleRun = typeof orchestrationCycleRuns.$inferSelect;
+export type ImprovementProposal = typeof improvementProposals.$inferSelect;
+export type OrchestraInboxEvent = typeof orchestraInboxEvents.$inferSelect;

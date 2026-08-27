@@ -10,6 +10,7 @@ import {
   orchestraEvents,
   projectAssets,
   projectVersions,
+  referenceAssets,
   users,
   videoProjects,
   videoScenes,
@@ -237,6 +238,27 @@ export async function createProjectAsset(input: {
 }) {
   const db = requireDatabase(await getDb());
   const result = await db.insert(projectAssets).values(input);
+  return Number(result[0].insertId);
+}
+
+export async function listReferenceAssets(userId: number) {
+  const db = requireDatabase(await getDb());
+  return db.select().from(referenceAssets).where(eq(referenceAssets.userId, userId)).orderBy(desc(referenceAssets.createdAt));
+}
+
+export async function createReferenceAsset(input: {
+  userId: number;
+  name: string;
+  storageKey: string;
+  url: string;
+  mimeType: string;
+  byteSize: number;
+  category: "imagem" | "áudio" | "vídeo" | "documento" | "texto";
+  agentUse: string;
+  purpose?: string | null;
+}) {
+  const db = requireDatabase(await getDb());
+  const result = await db.insert(referenceAssets).values(input);
   return Number(result[0].insertId);
 }
 

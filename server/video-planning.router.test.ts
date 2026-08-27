@@ -10,6 +10,7 @@ const dbMocks = vi.hoisted(() => ({
   getProjectWorkspace: vi.fn(),
   getSceneForUser: vi.fn(),
   getVideoProject: vi.fn(),
+  listReferenceAssets: vi.fn(),
   listVideoProjects: vi.fn(),
   recordOrchestraDelivery: vi.fn(),
   replaceProjectPlan: vi.fn(),
@@ -20,10 +21,12 @@ const dbMocks = vi.hoisted(() => ({
 
 const llmMock = vi.hoisted(() => ({ invokeLLM: vi.fn() }));
 const orchestraMock = vi.hoisted(() => ({ deliverToNexusOrchestra: vi.fn() }));
+const orchestrationDbMock = vi.hoisted(() => ({ listKnowledgeMemories: vi.fn(), recordMemoryRetrieval: vi.fn() }));
 
 vi.mock("./db", () => dbMocks);
 vi.mock("./_core/llm", () => llmMock);
 vi.mock("./orchestra", () => orchestraMock);
+vi.mock("./orchestrationDb", () => orchestrationDbMock);
 vi.mock("./_core/imageGeneration", () => ({ generateImage: vi.fn() }));
 vi.mock("./storage", () => ({ storagePut: vi.fn() }));
 
@@ -68,6 +71,8 @@ describe("video.projects.plan", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dbMocks.getVideoProject.mockResolvedValue(project);
+    dbMocks.listReferenceAssets.mockResolvedValue([{ id: 9, name: "ritmo.mp3", category: "áudio", agentUse: "ritmo e música", purpose: "Referência de energia", url: "/manus-storage/references/1/ritmo.mp3" }]);
+    orchestrationDbMock.listKnowledgeMemories.mockResolvedValue([]);
     dbMocks.createGenerationRun.mockResolvedValue(41);
     dbMocks.createOrchestraEvent.mockImplementation(async (input: Record<string, unknown>) => ({
       id: 100,
@@ -102,6 +107,7 @@ describe("video.projects.plan", () => {
     await expect(caller.projects.plan({ projectId: 7 })).resolves.toEqual({ success: true, scenesCreated: 1 });
 
     expect(dbMocks.updateVideoProject).toHaveBeenCalledWith(7, 1, { status: "planejando" });
+    expect(llmMock.invokeLLM).toHaveBeenCalledWith(expect.objectContaining({ messages: expect.arrayContaining([expect.objectContaining({ content: expect.stringContaining("ritmo.mp3") })]) }));
     expect(dbMocks.replaceProjectPlan).toHaveBeenCalledWith(7, 1, expect.objectContaining({
       script: "Abertura, demonstração e encerramento.",
       creativeSummary: "Uma peça de apresentação de alto contraste.",

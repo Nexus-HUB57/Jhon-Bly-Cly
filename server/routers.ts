@@ -3,6 +3,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { fusionRouter } from "./routers/fusion";
+import { orchestrationRouter } from "./routers/orchestration";
+import { referencesRouter } from "./routers/references";
 import { videoRouter } from "./routers/video";
 
 export const appRouter = router({
@@ -19,6 +21,8 @@ export const appRouter = router({
     }),
   }),
   fusion: fusionRouter,
+  orchestration: orchestrationRouter,
+  references: referencesRouter,
   video: videoRouter,
 });
 

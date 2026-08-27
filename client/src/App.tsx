@@ -7,6 +7,8 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import EcosystemFusion from "./pages/EcosystemFusion";
 import Home from "./pages/Home";
+import Orchestration from "./pages/Orchestration";
+import References from "./pages/References";
 import ProjectWorkspace from "./pages/ProjectWorkspace";
 
 function Router() {
@@ -14,7 +16,9 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"}><DashboardLayout><Home /></DashboardLayout></Route>
+      <Route path={"/orchestration"}><DashboardLayout><Orchestration /></DashboardLayout></Route>
       <Route path={"/fusion"}><DashboardLayout><EcosystemFusion /></DashboardLayout></Route>
+      <Route path={"/references"}><DashboardLayout><References /></DashboardLayout></Route>
       <Route path={"/projects/:id"}><DashboardLayout><ProjectWorkspace /></DashboardLayout></Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

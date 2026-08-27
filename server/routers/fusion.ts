@@ -3,6 +3,8 @@ import { TRPCError } from "@trpc/server";
 import { createFusionSyncEvent, listFusionConnectorProfiles, recordFusionSyncDelivery, stageFusionConnector } from "../db";
 import { deliverFusionSyncToNexusOrchestra } from "../orchestra";
 import { createFusionSyncEnvelope, FUSION_CONNECTORS, FUSION_REPOSITORIES, FUSION_RISK_LEVELS, FUSION_ROUTES, getFusionConnector, isFusionConnectorEligible, summarizeFusionCatalog } from "../../shared/fusionCatalog";
+import { JBCX19_ADAPTERS, summarizeJbcx19Adapters } from "../../shared/jbcx19Adapters";
+import { PROVIDER_RUNTIME_REGISTRY, summarizeProviderRuntime } from "../../shared/providerRuntime";
 import { protectedProcedure, router } from "../_core/trpc";
 
 export const fusionRouter = router({
@@ -13,6 +15,14 @@ export const fusionRouter = router({
       return { items: filtered, summary: summarizeFusionCatalog(FUSION_REPOSITORIES) };
     }),
   syncEnvelope: protectedProcedure.query(() => createFusionSyncEnvelope()),
+  providers: protectedProcedure.query(() => ({ items: PROVIDER_RUNTIME_REGISTRY, summary: summarizeProviderRuntime() })),
+  adapters: protectedProcedure.query(async ({ ctx }) => {
+    const profiles = await listFusionConnectorProfiles(ctx.user.id);
+    return {
+      items: JBCX19_ADAPTERS.map(adapter => ({ ...adapter, profile: profiles.find(profile => profile.connectorId === adapter.id) ?? null })),
+      summary: summarizeJbcx19Adapters(),
+    };
+  }),
   sync: protectedProcedure.mutation(async ({ ctx }) => {
     const envelope = createFusionSyncEnvelope();
     const event = await createFusionSyncEvent(ctx.user.id, envelope.eventName, envelope);
@@ -40,5 +50,17 @@ export const fusionRouter = router({
       status: "aguardando credencial" as const,
       nextStep: connector.credentialMode === "BYOK" ? "Forneça a credencial oficial do provedor para concluir a ativação." : "Configure uma infraestrutura externa persistente antes de ativar este conector.",
     };
+  }),
+  stageAdapter: protectedProcedure.input(z.object({ adapterId: z.string().min(1).max(120) })).mutation(async ({ ctx, input }) => {
+    const adapter = JBCX19_ADAPTERS.find(candidate => candidate.id === input.adapterId);
+    if (!adapter) throw new TRPCError({ code: "NOT_FOUND", message: "Adaptador JBCx19 não encontrado." });
+    if (adapter.activationMode === "bloqueado") throw new TRPCError({ code: "FORBIDDEN", message: "Este adaptador é bloqueado pela política de segurança do JBCx19." });
+    await stageFusionConnector(ctx.user.id, adapter.id);
+    const nextStep = adapter.activationMode === "credencial oficial"
+      ? "Forneça a credencial oficial do provedor no formulário protegido."
+      : adapter.activationMode === "host autorizado"
+        ? "Informe um host autorizado e validado para este runtime."
+        : "Revise o contrato público antes de promover este adaptador de catálogo para uma integração executável.";
+    return { adapterId: adapter.id, status: "aguardando credencial" as const, nextStep };
   }),
 });

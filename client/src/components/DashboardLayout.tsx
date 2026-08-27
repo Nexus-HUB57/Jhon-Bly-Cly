@@ -21,18 +21,19 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Blocks, Clapperboard, FolderKanban, LogOut, PanelLeft, Workflow } from "lucide-react";
+import { Blocks, Clapperboard, FolderKanban, LibraryBig, LogOut, PanelLeft, Workflow } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { IsometricMark } from "./IsometricMark";
 
-const menuItems = [
-  { icon: FolderKanban, label: "Projetos", path: "/" },
-  { icon: Clapperboard, label: "Produção", path: "/" },
-  { icon: Workflow, label: "Orquestração", path: "/" },
-  { icon: Blocks, label: "Fusão", path: "/fusion" },
+export const dashboardMenuItems = [
+  { id: "projects", icon: FolderKanban, label: "Projetos", path: "/" },
+  { id: "production", icon: Clapperboard, label: "Produção", path: "/" },
+  { id: "orchestration", icon: Workflow, label: "Orquestração", path: "/orchestration" },
+  { id: "references", icon: LibraryBig, label: "Referências", path: "/references" },
+  { id: "fusion", icon: Blocks, label: "Fusão", path: "/fusion" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -113,7 +114,7 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const activeMenuItem = dashboardMenuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -179,10 +180,10 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0 px-1">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
+              {dashboardMenuItems.map(item => {
                 const isActive = location === item.path;
                 return (
-                  <SidebarMenuItem key={item.path}>
+                  <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       isActive={isActive}
                       onClick={() => setLocation(item.path)}

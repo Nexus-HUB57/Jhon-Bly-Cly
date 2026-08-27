@@ -1,0 +1,1 @@
+ALTER TABLE `orchestration_cycles` MODIFY COLUMN `scheduleCron` varchar(120) NOT NULL DEFAULT '0 0 */6 * * *';
