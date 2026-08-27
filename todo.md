@@ -51,22 +51,22 @@
 - [x] Modelar uma biblioteca global de Referências para ativos de agentes audiovisuais, com tamanho máximo de 50 MB e metadados de uso.
 - [x] Implementar upload seguro de referências em S3 para formatos audiovisuais, imagens, texto e documentos permitidos.
 - [x] Construir o painel Referências com upload, busca, filtros, associação por finalidade e estados acessíveis.
-- [ ] Validar o painel, os limites de upload, a fusão técnica, testes, build, checkpoint e commit no repositório Nexus-HUB57/Jhon-Bly-Cly.
+- [x] Validar o painel, os limites de upload, a fusão técnica, testes, build, checkpoint e commit no repositório Nexus-HUB57/Jhon-Bly-Cly.
 - [x] Diferenciar na matriz JBCx19 os adaptadores executáveis configuráveis dos itens exclusivamente catalogados ou referenciais.
 - [x] Validar no painel Fusão a política explícita contra token harvesting e reutilização de credenciais de repositórios.
-- [ ] Reconfirmar a sessão autenticada no browser controlado após a correção da navegação, caso o usuário conclua o acesso solicitado.
+- [x] Reconfirmar a sessão autenticada no browser controlado após a correção da navegação, caso o usuário conclua o acesso solicitado.
 - [x] Mapear os requisitos de autenticação pública de Z.AI, Alibaba Cloud, DigitalOcean, Google AI Studio e Evomap.
 - [ ] Registrar e validar segredos oficiais dos novos provedores no armazenamento protegido, sem expor seus valores.
 - [ ] Isolar e corrigir somente uma credencial malformada entre os cinco novos provedores, preservando os quatro valores aprovados.
 - [x] Implementar e expor uma flag de runtime por provedor, mantendo ativos somente MiniMax, OpenAI, Llama, Z.AI e Google AI Studio e os demais explicitamente inativos.
 - [x] Cobrir por teste os provedores aprovados e os provedores desabilitados no runtime JBCx19.
-- [ ] Validar testes, tipagem, build, diffs e sincronizar somente acréscimos complementares ao repositório sem sobrescrever histórico ou arquivos existentes.
+- [x] Validar testes, tipagem, build, diffs e sincronizar somente acréscimos complementares ao repositório sem sobrescrever histórico ou arquivos existentes.
 - [x] Definir governança do workflow contínuo: limites de execução, idempotência, rate limits, auditoria, interrupção e aprovação humana para ações externas ou alterações de código.
 - [x] Implementar o endpoint autenticado Nexus_Orchestra com verificação de assinatura e outbox de eventos recebidos.
 - [x] Modelar memória persistente, documentos recuperáveis e avaliações de melhoria com recuperação contextual sem autoexecução irrestrita.
 - [ ] Implementar ciclos periódicos aprováveis de observação, síntese, proposta e avaliação usando LLM server-side.
 - [x] Integrar um painel de memória, execução e propostas de melhoria ao Studio JBC.
-- [ ] Executar smoke test, teste de estresse com limites seguros, testes automatizados, checkpoint e commit aditivo da orquestração.
+- [x] Executar smoke test, teste de estresse com limites seguros, testes automatizados, checkpoint e commit aditivo da orquestração.
 - [ ] Implementar ciclo periódico governado com execução idempotente, pausa, limite de taxa, orçamento e aprovação humana para efeitos externos.
 - [x] Implementar endpoint Nexus_Orchestra autenticado, com verificação de assinatura, rejeição de payloads inválidos e outbox de recebimento.
 - [x] Persistir memória, recuperação contextual e propostas de melhoria como dados revisáveis, nunca como instruções executáveis autônomas.
@@ -83,6 +83,10 @@
 - [x] Registrar contratos de roteamento e ferramentas como catálogos inativos por padrão, com permissão explícita e trilha de auditoria para cada invocação.
 - [x] Implementar uma superfície interna de governança para Planner, Executor, Monitor e Optimizer, sem execução autônoma de conectores, código ou credenciais.
 - [ ] Corrigir erros e bugs descobertos durante a integração, executar smoke/estresse limitado e sincronizar apenas acréscimos complementares ao GitHub.
+- [x] Investigar a falha histórica de consulta que recebeu HTML em vez de JSON após reload/HMR e confirmar que não há regressão ativa.
+- [x] Reiniciar o ciclo de desenvolvimento, repetir smoke autenticado e registrar logs recentes limpos de erros ativos de navegador e servidor.
+- [x] Catalogar as regressões conhecidas observadas durante a integração, com causa, correção e evidência de validação individual.
+- [ ] Concluir o item amplo de correção end to end somente após todos os bugs catalogados terem evidência de correção e validação repetida.
 - [x] Implementar controles e telemetria funcionais por papel do Core, com status, evidências associadas e trilha auditável no painel `/orchestration`.
 - [x] Adicionar testes para o contrato funcional de Planner, Executor, Monitor e Optimizer, além da exibição dos papéis.
 - [x] Exibir a trilha auditável dos papéis do Core com evento, status, data e contagem de evidências no painel `/orchestration`.
