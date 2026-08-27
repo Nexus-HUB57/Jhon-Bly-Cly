@@ -137,3 +137,6 @@
 - [x] Estender o planejamento interno para representar cenas, keyframes, sincronização de áudio e revisão de qualidade como dados auditáveis, sem fabricar renderizações ou alegar análise visual não executada.
 - [x] Definir a composição de vídeo como uma etapa opcional e aprovada, condicionada a um runtime de mídia compatível, em vez de instalar ou executar ferramentas externas no servidor web.
 - [x] Preservar o 9router como proposta auditável para fallback, sem varrer tokens, criar contas, habilitar planos gratuitos, trocar credenciais ou encadear gerações automaticamente.
+- [x] Reconciliar os sete provedores de API ativos declarados pelo proprietário com o catálogo de runtime, documentando capacidade, contrato e condição de fallback sem inspecionar chaves.
+- [x] Classificar os sete provedores por capacidade de planejamento, referência ou mídia e restringir a elegibilidade de fallback a propostas auditáveis sem execução automática.
+- [x] Exibir a matriz reconciliada de provedores no painel de orquestração, separando sincronização declarada, elegibilidade condicional e disponibilidade de saldo não confirmada.
