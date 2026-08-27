@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRuntimeProviderEnabled, PROVIDER_RUNTIME_REGISTRY, summarizeProviderRuntime } from "../shared/providerRuntime";
+import { getConditionalFreeFallbackProviders, isRuntimeProviderEnabled, PROVIDER_RUNTIME_REGISTRY, summarizeProviderRuntime } from "../shared/providerRuntime";
 
 describe("JBCx19 provider runtime registry", () => {
   it("mantém exatamente os seis provedores autorizados ativos", () => {
@@ -15,5 +15,15 @@ describe("JBCx19 provider runtime registry", () => {
       activation: expect.stringContaining("cofre"),
       rationale: expect.stringContaining("server-side"),
     }));
+  });
+
+  it("restringe a elegibilidade gratuita a propostas condicionais de texto e referência", () => {
+    expect(PROVIDER_RUNTIME_REGISTRY.find(provider => provider.id === "minimax")).toEqual(expect.objectContaining({
+      freeFallbackStatus: "não elegível",
+      freeFallbackScopes: [],
+    }));
+    expect(getConditionalFreeFallbackProviders("planejamento e texto").map(provider => provider.id)).toEqual(["zai", "gemini"]);
+    expect(getConditionalFreeFallbackProviders("análise de referências").map(provider => provider.id)).toEqual(["zai", "gemini"]);
+    expect(getConditionalFreeFallbackProviders("planejamento e texto")).not.toContainEqual(expect.objectContaining({ id: "minimax" }));
   });
 });

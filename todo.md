@@ -124,9 +124,9 @@
 - [x] Registrar uma proposta 9router para a verificação de saldo MiniMax, sem executar chamada externa a partir do roteador.
 - [x] Confirmar pelo painel oficial MiniMax, sem alterar cobrança, que o saldo disponível ainda é insuficiente para a prova KTD; não reenviar a geração enquanto a condição persistir.
 - [ ] Após confirmação de saldo disponível e autorização explícita da proposta, executar pelo backend JBC uma única tentativa auditável da prova KTD de 8 segundos com os ativos aprovados.
-- [ ] Inventariar, com documentação oficial, quais provedores ativos oferecem modalidade gratuita aplicável ao Studio sem assumir que uma chave existente habilita saldo, créditos ou escopo.
+- [x] Inventariar, com documentação oficial, quais provedores ativos oferecem modalidade gratuita aplicável ao Studio sem assumir que uma chave existente habilita saldo, créditos ou escopo.
 - [x] Projetar o fallback de saldo esgotado para registrar uma proposta 9router auditável, sem alternar provedor, ativar conectores ou executar chamada externa automaticamente.
-- [ ] Após aprovação humana do escopo de mídia, implementar e testar a política de fallback sem cobrança e sem reexecução em cascata.
+- [x] Após aprovação humana do escopo de mídia, implementar e testar a política de fallback sem cobrança e sem reexecução em cascata.
 - [x] Ao receber a classificação segura de saldo insuficiente, registrar automaticamente uma escalada do Nexus_Orchestra e uma proposta 9router, sem acionar um adaptador, plataforma externa ou nova geração.
 - [x] Exibir no projeto a proposta de fallback pendente, seu limite de execução e a aprovação humana exigida antes de qualquer sincronização ou envio externo.
 - [x] Testar que o incidente de saldo insuficiente cria somente evidências e propostas auditáveis, sem chamar provedores alternativos, rotacionar tokens ou reexecutar o MiniMax.
