@@ -142,3 +142,8 @@
 - [x] Exibir a matriz reconciliada de provedores no painel de orquestração, separando sincronização declarada, elegibilidade condicional e disponibilidade de saldo não confirmada.
 - [x] Verificar a disponibilidade atual do Studio privado e diferenciar registros históricos de erros ativos sem ler logs de rede ou segredos.
 - [x] Documentar a indisponibilidade intencional do domínio público e manter publicação e Heartbeat bloqueados até nova autorização explícita.
+- [x] Definir um contrato de processamento de tokens com orçamento diário, limite por requisição, reset UTC e estado de quota desconhecida.
+- [x] Classificar os sete provedores sincronizados e Ollama como candidatos declarativos, sem assumir que token sincronizado equivale a quota gratuita confirmada.
+- [x] Exibir o orçamento e o estado de tokenização no painel de orquestração sem permitir execução, troca automática de credencial ou fallback em cascata.
+- [x] Cobrir a política com testes de limite diário, reset, seleção determinística e bloqueio de execução externa.
+- [x] Documentar que Ollama é gratuito apenas como runtime local do proprietário e requer host/processo próprio; o JBC não o instala nem o inicia automaticamente.
