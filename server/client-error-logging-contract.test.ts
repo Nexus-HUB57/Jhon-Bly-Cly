@@ -11,5 +11,7 @@ describe("registro global de falhas do cliente", () => {
     expect(isLocallyHandledMutation(undefined)).toBe(false);
     expect(clientSource).toContain('if (!isLocallyHandledMutation(event.mutation.options.meta)) console.error("[API Mutation Error]", error);');
     expect(workspaceSource).toContain('requestVideoGeneration.useMutation({ meta: { errorHandling: "local" }');
+    expect(workspaceSource).toContain('toSafeVideoErrorMessage(run.errorMessage, "Esta execução falhou. Revise o projeto e tente novamente.")');
+    expect(workspaceSource).not.toContain("console.error");
   });
 });

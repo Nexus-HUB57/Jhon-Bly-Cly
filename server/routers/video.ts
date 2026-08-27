@@ -27,6 +27,7 @@ import { createMiniMaxVideoTask, hasMiniMaxCredentials, queryMiniMaxVideoTask } 
 import { rankMemories } from "../memory";
 import { listKnowledgeMemories, recordMemoryRetrieval } from "../orchestrationDb";
 import { canTransitionTaskStatus, TASK_STATUSES } from "../../shared/video";
+import { toSafeVideoErrorMessage } from "../../shared/videoErrorMessages";
 import { protectedProcedure, router } from "../_core/trpc";
 
 const taskStatusSchema = z.enum(TASK_STATUSES);
@@ -195,7 +196,7 @@ export const videoRouter = router({
         await publishEvent({ projectId: input.projectId, eventName: "video.planning.manual_ready_for_review", entityType: "generation_run", entityId: runId, payload: { scenesCreated: 1, status: "aguardando revisão", source: "revisão humana" } });
         return { success: true, scenesCreated: 1 };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Erro ao registrar o plano manual.";
+        const message = toSafeVideoErrorMessage(error, "Não foi possível registrar o plano manual.");
         await updateVideoProject(input.projectId, ctx.user.id, { status: "com falha" });
         await completeGenerationRun(runId, "com falha", undefined, message);
         await publishEvent({ projectId: input.projectId, eventName: "video.planning.manual_failed", entityType: "generation_run", entityId: runId, payload: { message, status: "com falha" } });
@@ -268,7 +269,7 @@ export const videoRouter = router({
         await publishEvent({ projectId: input.projectId, eventName: "video.planning.ready_for_review", entityType: "generation_run", entityId: runId, payload: { scenesCreated: plan.scenes.length, status: "aguardando revisão" } });
         return { success: true, scenesCreated: plan.scenes.length };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Erro ao planejar o vídeo.";
+        const message = toSafeVideoErrorMessage(error, "Não foi possível planejar o vídeo.");
         await updateVideoProject(input.projectId, ctx.user.id, { status: "com falha" });
         await completeGenerationRun(runId, "com falha", undefined, message);
         await publishEvent({ projectId: input.projectId, eventName: "video.planning.failed", entityType: "generation_run", entityId: runId, payload: { message, status: "com falha" } });
@@ -289,7 +290,7 @@ export const videoRouter = router({
       try {
         task = (await queryMiniMaxVideoTask(taskId)).task;
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Não foi possível consultar o provedor de vídeo.";
+        const message = toSafeVideoErrorMessage(error, "Não foi possível consultar a situação do vídeo no provedor.");
         await publishEvent({ projectId: input.projectId, eventName: "video.generation.poll_failed", entityType: "generation_run", entityId: input.runId, payload: { taskId, message } });
         throw new TRPCError({ code: "BAD_GATEWAY", message });
       }
@@ -316,7 +317,7 @@ export const videoRouter = router({
         return { runId: input.runId, status: "concluído" as const, assetId, terminal: true };
       }
 
-      const message = task.error?.message || (task.status === "cancelled" ? "A tarefa foi cancelada pelo provedor." : "O provedor não retornou um resultado de vídeo válido.");
+      const message = toSafeVideoErrorMessage(task.error?.message, task.status === "cancelled" ? "A tarefa foi cancelada pelo provedor." : "O provedor não retornou um resultado de vídeo válido.");
       await updateVideoProject(input.projectId, ctx.user.id, { status: "com falha" });
       await updateProjectScenesStatus(input.projectId, "com falha");
       await completeGenerationRun(input.runId, "com falha", { taskId, provider: "MiniMax-H3", providerStatus: task.status }, message);
@@ -364,7 +365,7 @@ export const videoRouter = router({
         await publishEvent({ projectId: input.projectId, eventName: "video.generation.requested", entityType: "generation_run", entityId: runId, payload: { status: "gerando", orchestration: "Nexus_Orchestra", provider: "MiniMax-H3", taskId: task.task_id, referenceCount: references.length } });
         return { runId, taskId: task.task_id, status: "gerando" as const };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Falha ao solicitar o vídeo ao provedor.";
+        const message = toSafeVideoErrorMessage(error, "Não foi possível solicitar o vídeo ao provedor.");
         await updateVideoProject(input.projectId, ctx.user.id, { status: "com falha" });
         await updateProjectScenesStatus(input.projectId, "com falha");
         await completeGenerationRun(runId, "com falha", undefined, message);
@@ -399,7 +400,7 @@ export const videoRouter = router({
         await publishEvent({ projectId: current.project.id, sceneId: input.sceneId, eventName: "video.reference_image.ready", entityType: "asset", entityId: assetId, payload: { url: image.url, status: "aguardando revisão" } });
         return { url: image.url, assetId };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Falha ao gerar imagem de referência.";
+        const message = toSafeVideoErrorMessage(error, "Não foi possível gerar a imagem de referência.");
         await updateScene(input.sceneId, ctx.user.id, { status: "com falha" });
         await completeGenerationRun(runId, "com falha", undefined, message);
         await publishEvent({ projectId: current.project.id, sceneId: input.sceneId, eventName: "video.reference_image.failed", entityType: "generation_run", entityId: runId, payload: { message, status: "com falha" } });
@@ -450,7 +451,7 @@ export const videoRouter = router({
         await publishEvent({ projectId: input.projectId, eventName: "video.export.manifest_ready", entityType: "asset", entityId: assetId, payload: { url: stored.url } });
         return { assetId, url: stored.url };
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Falha ao exportar manifesto.";
+        const message = toSafeVideoErrorMessage(error, "Não foi possível exportar o manifesto de produção.");
         await completeGenerationRun(runId, "com falha", undefined, message);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
       }

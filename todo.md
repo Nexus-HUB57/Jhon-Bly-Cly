@@ -117,3 +117,7 @@
 - [x] Implementar o roteamento governado sem autoativar conectores, executar repositórios externos ou usar credenciais fora do cofre protegido.
 - [x] Consolidar a matriz dos 19 adaptadores em capacidades, estados e níveis de risco usados pelo 9router.
 - [x] Exigir aprovação humana explícita para qualquer intenção roteada que ultrapasse seleção e proposta auditável.
+- [x] Consolidar as pendências restantes por condição: correção interna verificável, contrato externo, saldo de provedor ou publicação suspensa.
+- [x] Redigir detalhes técnicos e parâmetros internos de falhas históricas antes de exibi-los nos resultados do projeto.
+- [x] Validar no browser autenticado a aba Resultados do KTD junto com evidência explícita de ausência de erro global de navegador ao exibir a falha persistida de saldo insuficiente.
+- [x] Adicionar verificação automatizada que prove que falhas persistidas renderizadas no ProjectWorkspace não disparam o logger global.
