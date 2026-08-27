@@ -52,3 +52,17 @@ O mesmo mecanismo de teste exibiu, na sessão autenticada, a mensagem de indispo
 Na validação interativa, a ação **Tentar novamente** do cartão de provedores removeu a condição de falha de desenvolvimento e restaurou a lista com cinco provedores ativos e três inativos. Nenhuma configuração de provedor foi alterada durante o teste.
 
 Por fim, a consulta de adaptadores foi submetida ao mesmo cenário autenticado de falha no modo de desenvolvimento. A mensagem de erro e a ação de nova tentativa foram exibidas; o acionamento restaurou a lista catalogada de adaptadores. Esse exercício não alterou perfis, credenciais, hosts ou permissões.
+
+## Pulse interno protegido: maturidade operacional
+
+O **Pulse interno protegido** é um painel administrativo de governança. Ele consolida evidências, memórias curadas e propostas revisadas em um indicador de maturidade operacional entre 0 e 100. O indicador possui os níveis `observação`, `orientação`, `proposta` e `revisão`; contudo, o teto técnico de autonomia permanece em **proposta**. Assim, maior experiência só melhora a qualidade das recomendações e da triagem de contexto. Ela não permite ativar conectores, executar ferramentas, alterar código, configurar credenciais, acessar recursos remotos ou publicar versões sem aprovação humana.
+
+As designações Nexus Sidian, Obsidian Vault, 9router, 9remote, MarketplaceHub e Agent Apps são registradas como **contratos de catálogo**. Elas ficam inativas, sem endpoint e sem permissão de execução até que o proprietário forneça documentação oficial, método de autenticação, escopo de dados e aprovação administrativa. O painel registra somente propostas e auditorias; nenhum arquivo local, token, conector, aplicativo GitHub ou ferramenta externa é lido, instalado ou invocado por essa camada.
+
+Durante a validação autenticada do painel, o Pulse interno exibiu índice de maturidade em `observação`, teto em `observação`, os seis contratos de catálogo como inativos e os quatro papéis do Core. Planner, Executor, Monitor e Optimizer mostraram explicitamente seus limites: recuperação de contexto, intenção auditável, observação de estado e sugestão de melhoria, respectivamente; em nenhum caso houve permissão de execução externa.
+
+No mesmo teste visual, os contratos 9router, 9remote, Agent Apps e MarketplaceHub exibiram risco alto e o estado `catálogo`. As únicas ações expostas foram solicitar revisão e registrar proposta; nenhuma oferecia ativação, acesso remoto, instalação ou chamada externa.
+
+O smoke test autenticado também acionou os controles de Planner e Executor. O Planner registrou uma recuperação contextual com zero evidências, mantendo o estado `aguardando evidências`. O Executor registrou a intenção de avaliar o contrato do Nexus Sidian; a operação ficou `bloqueada` e confirmou visualmente que nenhuma chamada externa foi executada. Ambos os registros passaram a constar na trilha auditável com papel, evento, status, horário e contagem de evidências.
+
+Na sequência, Monitor registrou uma inspeção manual com estado `observando`, e Optimizer registrou uma observação de melhoria com estado `aguardando revisão`. A trilha passou a conter os quatro papéis, todos com zero efeitos externos, sem alteração de código, credenciais, conectores ou políticas. Essa execução usa somente o armazenamento autenticado do Studio e não habilita autonomia irrestrita.

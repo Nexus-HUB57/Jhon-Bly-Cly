@@ -77,3 +77,13 @@
 - [x] Executar e registrar um smoke test autenticado da rota `/orchestration`, cobrindo dashboard, provedores, adaptadores e os estados de erro/retry.
 - [x] Executar smoke test visual autenticado real da rota `/orchestration`, cobrindo o carregamento de dashboard, provedores e adaptadores.
 - [x] Adicionar cobertura verificável dos estados visuais de erro e nova tentativa da página `/orchestration`.
+- [x] Definir o painel interno protegido de maturidade operacional, distinguindo métricas auditáveis de alegações de senciência ou autonomia irrestrita.
+- [x] Modelar indicadores graduais e limites explícitos de autonomia por evidência, avaliação, risco e aprovação humana.
+- [x] Estender a memória RAG para registrar fontes, recuperação, confiança, escopo e retenção de forma revisável.
+- [x] Registrar contratos de roteamento e ferramentas como catálogos inativos por padrão, com permissão explícita e trilha de auditoria para cada invocação.
+- [x] Implementar uma superfície interna de governança para Planner, Executor, Monitor e Optimizer, sem execução autônoma de conectores, código ou credenciais.
+- [ ] Corrigir erros e bugs descobertos durante a integração, executar smoke/estresse limitado e sincronizar apenas acréscimos complementares ao GitHub.
+- [x] Implementar controles e telemetria funcionais por papel do Core, com status, evidências associadas e trilha auditável no painel `/orchestration`.
+- [x] Adicionar testes para o contrato funcional de Planner, Executor, Monitor e Optimizer, além da exibição dos papéis.
+- [x] Exibir a trilha auditável dos papéis do Core com evento, status, data e contagem de evidências no painel `/orchestration`.
+- [x] Executar smoke test autenticado acionando Planner, Executor, Monitor e Optimizer e confirmar a atualização visível do histórico por papel.

@@ -3,8 +3,13 @@ import { TASK_STATUSES } from "../shared/video";
 import {
   IMPROVEMENT_PROPOSAL_STATUSES,
   MEMORY_SOURCE_TYPES,
+  GOVERNANCE_CATALOG_KINDS,
+  GOVERNANCE_CATALOG_STATUSES,
+  CORE_ROLE_AUDIT_STATUSES,
+  OPERATIONAL_MATURITY_LEVELS,
   ORCHESTRATION_CYCLE_STATUSES,
   ORCHESTRA_INBOX_STATUSES,
+  TOOL_INVOCATION_STATUSES,
 } from "../shared/orchestrationPolicy";
 
 /**
@@ -164,6 +169,9 @@ export const knowledgeMemories = mysqlTable("knowledge_memories", {
   summary: text("summary"),
   tags: json("tags"),
   sourceReference: varchar("sourceReference", { length: 512 }),
+  trustScore: int("trustScore").notNull().default(50),
+  retentionClass: mysqlEnum("retentionClass", ["curta", "padrão", "curada"]).notNull().default("padrão"),
+  reviewedAt: timestamp("reviewedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -175,6 +183,7 @@ export const memoryRetrievals = mysqlTable("memory_retrievals", {
   query: text("query").notNull(),
   resultCount: int("resultCount").notNull().default(0),
   retrievedMemoryIds: json("retrievedMemoryIds").notNull(),
+  retrievedEvidence: json("retrievedEvidence"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -236,6 +245,62 @@ export const orchestraInboxEvents = mysqlTable("orchestra_inbox_events", {
   verificationError: text("verificationError"),
 }, table => [uniqueIndex("orchestra_inbox_events_event_unique").on(table.eventId)]);
 
+export const operationalMaturityProfiles = mysqlTable("operational_maturity_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  score: int("score").notNull().default(0),
+  level: mysqlEnum("level", OPERATIONAL_MATURITY_LEVELS).notNull().default("observação"),
+  autonomyCeiling: mysqlEnum("autonomyCeiling", ["observação", "orientação", "proposta"]).notNull().default("observação"),
+  evidenceCount: int("evidenceCount").notNull().default(0),
+  approvedProposalCount: int("approvedProposalCount").notNull().default(0),
+  reviewedMemoryCount: int("reviewedMemoryCount").notNull().default(0),
+  protectedStorage: int("encryptedAtRest").notNull().default(1),
+  lastCalculatedAt: timestamp("lastCalculatedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("operational_maturity_profiles_user_unique").on(table.userId)]);
+
+export const governanceCatalogEntries = mysqlTable("governance_catalog_entries", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  kind: mysqlEnum("kind", GOVERNANCE_CATALOG_KINDS).notNull(),
+  identifier: varchar("identifier", { length: 160 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  status: mysqlEnum("status", GOVERNANCE_CATALOG_STATUSES).notNull().default("catálogo"),
+  riskLevel: mysqlEnum("riskLevel", ["baixo", "médio", "alto"]).notNull().default("médio"),
+  requiresHumanApproval: int("requiresHumanApproval").notNull().default(1),
+  externalEndpoint: varchar("externalEndpoint", { length: 1024 }),
+  purpose: text("purpose").notNull(),
+  guardrail: text("guardrail").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("governance_catalog_user_identifier_unique").on(table.userId, table.identifier)]);
+
+export const governedToolInvocations = mysqlTable("governed_tool_invocations", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  catalogEntryId: int("catalogEntryId").references(() => governanceCatalogEntries.id, { onDelete: "set null" }),
+  action: varchar("action", { length: 255 }).notNull(),
+  status: mysqlEnum("status", TOOL_INVOCATION_STATUSES).notNull().default("proposta"),
+  requestSummary: text("requestSummary").notNull(),
+  resultSummary: text("resultSummary"),
+  reviewedBy: int("reviewedBy").references(() => users.id, { onDelete: "set null" }),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const coreRoleAuditEvents = mysqlTable("core_role_audit_events", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  roleId: mysqlEnum("roleId", ["planner", "executor", "monitor", "optimizer"]).notNull(),
+  eventName: varchar("eventName", { length: 255 }).notNull(),
+  status: mysqlEnum("status", CORE_ROLE_AUDIT_STATUSES).notNull(),
+  evidenceCount: int("evidenceCount").notNull().default(0),
+  summary: text("summary").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export type VideoProject = typeof videoProjects.$inferSelect;
 export type InsertVideoProject = typeof videoProjects.$inferInsert;
 export type VideoScene = typeof videoScenes.$inferSelect;
@@ -250,3 +315,7 @@ export type OrchestrationCycle = typeof orchestrationCycles.$inferSelect;
 export type OrchestrationCycleRun = typeof orchestrationCycleRuns.$inferSelect;
 export type ImprovementProposal = typeof improvementProposals.$inferSelect;
 export type OrchestraInboxEvent = typeof orchestraInboxEvents.$inferSelect;
+export type OperationalMaturityProfile = typeof operationalMaturityProfiles.$inferSelect;
+export type GovernanceCatalogEntry = typeof governanceCatalogEntries.$inferSelect;
+export type GovernedToolInvocation = typeof governedToolInvocations.$inferSelect;
+export type CoreRoleAuditEvent = typeof coreRoleAuditEvents.$inferSelect;

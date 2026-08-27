@@ -1,18 +1,27 @@
 import { and, desc, eq } from "drizzle-orm";
 import {
+  coreRoleAuditEvents,
+  governanceCatalogEntries,
+  governedToolInvocations,
   improvementProposals,
   knowledgeMemories,
   memoryRetrievals,
+  operationalMaturityProfiles,
   orchestraInboxEvents,
   orchestrationCycleRuns,
   orchestrationCycles,
 } from "../drizzle/schema";
 import {
+  type CoreRoleAuditStatus,
+  type GovernedCoreRoleId,
   type ImprovementProposalStatus,
+  type GovernanceCatalogStatus,
   type MemorySourceType,
   type OrchestraInboxStatus,
   type OrchestrationCycleStatus,
   canStartCycle,
+  deriveOperationalMaturity,
+  GOVERNED_CORE_ROLES,
 } from "../shared/orchestrationPolicy";
 import { getDb } from "./db";
 
@@ -20,6 +29,15 @@ function requireDatabase<T>(db: T | null): T {
   if (!db) throw new Error("Banco de dados indisponível.");
   return db;
 }
+
+const GOVERNANCE_CATALOG_SEED = [
+  { identifier: "nexus-sidian-mcp", kind: "memória" as const, name: "Nexus Sidian (MCP)", riskLevel: "médio" as const, purpose: "Reservar o contrato de memória externa e recuperação contextual.", guardrail: "Permanece em catálogo até URL MCP, autenticação oficial, escopo e aprovação administrativa." },
+  { identifier: "obsidian-vault", kind: "memória" as const, name: "Obsidian Vault", riskLevel: "médio" as const, purpose: "Representar uma possível fonte documental curada.", guardrail: "Não acessa sistema de arquivos local, diretórios pessoais ou conteúdo não enviado ao workspace." },
+  { identifier: "9router", kind: "roteamento" as const, name: "9router", riskLevel: "alto" as const, purpose: "Reservar um contrato de gateway e seleção de rotas.", guardrail: "Não encaminha requisições sem endpoint autorizado, política de dados e aprovação humana." },
+  { identifier: "9remote", kind: "roteamento" as const, name: "9remote", riskLevel: "alto" as const, purpose: "Reservar um contrato para acesso remoto explicitamente autorizado.", guardrail: "Acesso remoto é bloqueado por padrão; exige identidade, escopo, endpoint e aprovação explícita." },
+  { identifier: "marketplace-hub", kind: "ferramenta" as const, name: "MarketplaceHub (Matrix Hub)", riskLevel: "alto" as const, purpose: "Catalogar ferramentas e integrações sujeitas à revisão.", guardrail: "Não instala, executa ou habilita ferramentas automaticamente." },
+  { identifier: "github-agent-apps", kind: "ferramenta" as const, name: "Agent Apps (GitHub)", riskLevel: "alto" as const, purpose: "Catalogar possíveis integrações oficiais com GitHub.", guardrail: "Exige aplicativo OAuth oficial, permissões mínimas e aprovação para cada operação externa." },
+];
 
 export async function getOrCreateOrchestrationCycle(userId: number) {
   const db = requireDatabase(await getDb());
@@ -36,6 +54,73 @@ export async function getOrchestrationCycleByTaskUid(taskUid: string) {
   const db = requireDatabase(await getDb());
   const [cycle] = await db.select().from(orchestrationCycles).where(eq(orchestrationCycles.taskUid, taskUid)).limit(1);
   return cycle;
+}
+
+export async function getOrCreateOperationalMaturityProfile(userId: number) {
+  const db = requireDatabase(await getDb());
+  const [existing] = await db.select().from(operationalMaturityProfiles).where(eq(operationalMaturityProfiles.userId, userId)).limit(1);
+  if (existing) return existing;
+  const maturity = deriveOperationalMaturity({ evidenceCount: 0, approvedProposalCount: 0, reviewedMemoryCount: 0 });
+  const { requiresHumanApproval: _requiresHumanApproval, ...profileValues } = maturity;
+  await db.insert(operationalMaturityProfiles).values({ userId, ...profileValues, protectedStorage: 1 });
+  const [created] = await db.select().from(operationalMaturityProfiles).where(eq(operationalMaturityProfiles.userId, userId)).limit(1);
+  if (!created) throw new Error("Não foi possível inicializar o perfil de maturidade operacional.");
+  return created;
+}
+
+export async function refreshOperationalMaturityProfile(userId: number) {
+  const db = requireDatabase(await getDb());
+  const [memories, approvedProposals, reviewedMemories] = await Promise.all([
+    db.select({ id: knowledgeMemories.id }).from(knowledgeMemories).where(eq(knowledgeMemories.userId, userId)),
+    db.select({ id: improvementProposals.id }).from(improvementProposals).where(and(eq(improvementProposals.userId, userId), eq(improvementProposals.status, "aprovada"))),
+    db.select({ id: knowledgeMemories.id }).from(knowledgeMemories).where(and(eq(knowledgeMemories.userId, userId), eq(knowledgeMemories.retentionClass, "curada"))),
+  ]);
+  const maturity = deriveOperationalMaturity({ evidenceCount: memories.length, approvedProposalCount: approvedProposals.length, reviewedMemoryCount: reviewedMemories.length });
+  const { requiresHumanApproval: _requiresHumanApproval, ...profileValues } = maturity;
+  const profile = await getOrCreateOperationalMaturityProfile(userId);
+  await db.update(operationalMaturityProfiles).set({ ...profileValues, evidenceCount: memories.length, approvedProposalCount: approvedProposals.length, reviewedMemoryCount: reviewedMemories.length, lastCalculatedAt: new Date() }).where(eq(operationalMaturityProfiles.id, profile.id));
+  const [updated] = await db.select().from(operationalMaturityProfiles).where(eq(operationalMaturityProfiles.id, profile.id)).limit(1);
+  return updated!;
+}
+
+export async function listOrSeedGovernanceCatalog(userId: number) {
+  const db = requireDatabase(await getDb());
+  const existing = await db.select().from(governanceCatalogEntries).where(eq(governanceCatalogEntries.userId, userId));
+  const existingIds = new Set(existing.map(entry => entry.identifier));
+  const missing = GOVERNANCE_CATALOG_SEED.filter(entry => !existingIds.has(entry.identifier));
+  if (missing.length) await db.insert(governanceCatalogEntries).values(missing.map(entry => ({ ...entry, userId, status: "catálogo" as const, requiresHumanApproval: 1 })));
+  return db.select().from(governanceCatalogEntries).where(eq(governanceCatalogEntries.userId, userId)).orderBy(governanceCatalogEntries.kind, governanceCatalogEntries.name);
+}
+
+export async function updateGovernanceCatalogEntry(input: { userId: number; entryId: number; status: GovernanceCatalogStatus }) {
+  const db = requireDatabase(await getDb());
+  const [entry] = await db.select().from(governanceCatalogEntries).where(and(eq(governanceCatalogEntries.id, input.entryId), eq(governanceCatalogEntries.userId, input.userId))).limit(1);
+  if (!entry) return undefined;
+  await db.update(governanceCatalogEntries).set({ status: input.status, updatedAt: new Date() }).where(eq(governanceCatalogEntries.id, entry.id));
+  const [updated] = await db.select().from(governanceCatalogEntries).where(eq(governanceCatalogEntries.id, entry.id)).limit(1);
+  return updated;
+}
+
+export async function createGovernedToolInvocation(input: { userId: number; catalogEntryId: number; action: string; requestSummary: string }) {
+  const db = requireDatabase(await getDb());
+  const [entry] = await db.select().from(governanceCatalogEntries).where(and(eq(governanceCatalogEntries.id, input.catalogEntryId), eq(governanceCatalogEntries.userId, input.userId))).limit(1);
+  if (!entry) throw new Error("Ferramenta ou rota não encontrada no catálogo protegido.");
+  const status = entry.status === "ativado" ? "proposta" as const : "bloqueada" as const;
+  const result = await db.insert(governedToolInvocations).values({ userId: input.userId, catalogEntryId: entry.id, action: input.action, status, requestSummary: input.requestSummary, resultSummary: status === "bloqueada" ? "Invocação registrada sem execução: a entrada ainda não foi ativada com aprovação humana." : null });
+  return { id: Number(result[0].insertId), status, executed: false };
+}
+
+export async function recordCoreRoleAudit(input: {
+  userId: number;
+  roleId: GovernedCoreRoleId;
+  eventName: string;
+  status: CoreRoleAuditStatus;
+  evidenceCount?: number;
+  summary: string;
+}) {
+  const db = requireDatabase(await getDb());
+  const result = await db.insert(coreRoleAuditEvents).values({ ...input, evidenceCount: input.evidenceCount ?? 0 });
+  return Number(result[0].insertId);
 }
 
 export async function updateOrchestrationCycle(input: {
@@ -133,6 +218,7 @@ export async function recordMemoryRetrieval(input: {
   projectId?: number | null;
   query: string;
   retrievedMemoryIds: number[];
+  retrievedEvidence?: Array<{ id: number; score: number; trustScore: number; retentionClass: string; sourceType: string; projectId: number | null }>;
 }) {
   const db = requireDatabase(await getDb());
   await db.insert(memoryRetrievals).values({
@@ -141,7 +227,22 @@ export async function recordMemoryRetrieval(input: {
     query: input.query,
     resultCount: input.retrievedMemoryIds.length,
     retrievedMemoryIds: input.retrievedMemoryIds,
+    retrievedEvidence: input.retrievedEvidence ?? null,
   });
+}
+
+export async function reviewKnowledgeMemory(input: {
+  userId: number;
+  memoryId: number;
+  trustScore: number;
+  retentionClass: "curta" | "padrão" | "curada";
+}) {
+  const db = requireDatabase(await getDb());
+  const [memory] = await db.select().from(knowledgeMemories).where(and(eq(knowledgeMemories.id, input.memoryId), eq(knowledgeMemories.userId, input.userId))).limit(1);
+  if (!memory) return undefined;
+  await db.update(knowledgeMemories).set({ trustScore: input.trustScore, retentionClass: input.retentionClass, reviewedAt: new Date(), updatedAt: new Date() }).where(eq(knowledgeMemories.id, memory.id));
+  const [updated] = await db.select().from(knowledgeMemories).where(eq(knowledgeMemories.id, memory.id)).limit(1);
+  return updated;
 }
 
 export async function claimCycleRun(input: {
@@ -286,11 +387,16 @@ export async function listOrchestraInboxEvents(limit = 20) {
 export async function getOrchestrationDashboard(userId: number) {
   const cycle = await getOrCreateOrchestrationCycle(userId);
   const db = requireDatabase(await getDb());
-  const [runs, proposals, memories, inbox] = await Promise.all([
+  const [runs, proposals, memories, inbox, maturity, catalog, toolInvocations, coreRoleAudit] = await Promise.all([
     db.select().from(orchestrationCycleRuns).where(eq(orchestrationCycleRuns.cycleId, cycle.id)).orderBy(desc(orchestrationCycleRuns.startedAt)).limit(12),
     listImprovementProposals(userId),
     db.select().from(knowledgeMemories).where(eq(knowledgeMemories.userId, userId)).orderBy(desc(knowledgeMemories.updatedAt)).limit(12),
     listOrchestraInboxEvents(12),
+    refreshOperationalMaturityProfile(userId),
+    listOrSeedGovernanceCatalog(userId),
+    db.select().from(governedToolInvocations).where(eq(governedToolInvocations.userId, userId)).orderBy(desc(governedToolInvocations.createdAt)).limit(12),
+    db.select().from(coreRoleAuditEvents).where(eq(coreRoleAuditEvents.userId, userId)).orderBy(desc(coreRoleAuditEvents.createdAt)).limit(24),
   ]);
-  return { cycle, runs, proposals: proposals.slice(0, 12), memories, inbox };
+  const coreRoles = GOVERNED_CORE_ROLES.map(role => ({ ...role, latestAudit: coreRoleAudit.find(audit => audit.roleId === role.id) ?? null }));
+  return { cycle, runs, proposals: proposals.slice(0, 12), memories, inbox, maturity, catalog, toolInvocations, coreRoles, coreRoleAudit };
 }

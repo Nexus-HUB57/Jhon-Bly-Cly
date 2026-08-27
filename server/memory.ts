@@ -35,14 +35,15 @@ export function rankMemories(query: string, memories: KnowledgeMemory[], limit =
       const summary = normalized(memory.summary);
       const content = normalized(memory.content);
       const tags = normalized(toTagText(memory.tags));
-      const score = tokens.reduce((total, token) => (
+      const lexicalScore = tokens.reduce((total, token) => (
         total +
         (title.includes(token) ? 5 : 0) +
         (tags.includes(token) ? 3 : 0) +
         (summary.includes(token) ? 2 : 0) +
         (content.includes(token) ? 1 : 0)
       ), 0);
-      return { ...memory, score };
+      const trustBoost = Math.round((memory.trustScore ?? 50) / 25);
+      return { ...memory, score: lexicalScore + trustBoost };
     })
     .filter(memory => memory.score > 0)
     .sort((a, b) => b.score - a.score || b.updatedAt.getTime() - a.updatedAt.getTime())

@@ -37,6 +37,7 @@ export default function Orchestration() {
   const [pauseReason, setPauseReason] = useState("Revisão humana solicitada");
   const [actionError, setActionError] = useState<string | null>(null);
   const [scheduleMessage, setScheduleMessage] = useState<string | null>(null);
+  const [coreMessage, setCoreMessage] = useState<string | null>(null);
 
   const retryQuery = (kind: "dashboard" | "providers" | "adapters") => {
     setPreviewFailure(null);
@@ -68,6 +69,11 @@ export default function Orchestration() {
     },
   });
   const review = trpc.orchestration.reviewProposal.useMutation({ onSuccess: refresh });
+  const reviewMemory = trpc.orchestration.reviewMemory.useMutation({ onSuccess: refresh, onError: error => setActionError(error.message) });
+  const stageCatalogEntry = trpc.orchestration.stageCatalogEntry.useMutation({ onSuccess: refresh, onError: error => setActionError(error.message) });
+  const proposeCatalogAction = trpc.orchestration.proposeCatalogAction.useMutation({ onSuccess: refresh, onError: error => setActionError(error.message) });
+  const retrieveMemory = trpc.orchestration.plannerRetrieve.useMutation({ onSuccess: refresh, onError: error => setActionError(error.message) });
+  const observeCoreRole = trpc.orchestration.observeCoreRole.useMutation({ onSuccess: refresh, onError: error => setActionError(error.message) });
 
   const activateAndRun = async () => {
     try {
@@ -86,6 +92,28 @@ export default function Orchestration() {
       await registerSchedule.mutateAsync({ cron: data?.cycle.scheduleCron ?? "0 0 */6 * * *" });
     } catch {
       setScheduleMessage("O agendamento só pode ser registrado após a publicação do checkpoint. Nenhuma tarefa foi criada.");
+    }
+  };
+
+  const operateCoreRole = async (roleId: "planner" | "executor" | "monitor" | "optimizer") => {
+    try {
+      setActionError(null);
+      if (roleId === "planner") {
+        const results = await retrieveMemory.mutateAsync({ query: "contexto criativo do workspace" });
+        setCoreMessage(`Planner registrou uma recuperação auditável com ${results.length} evidência(s).`);
+        return;
+      }
+      if (roleId === "executor") {
+        const entry = data?.catalog[0];
+        if (!entry) return;
+        const result = await proposeCatalogAction.mutateAsync({ catalogEntryId: entry.id, action: "avaliar contrato", requestSummary: `Intenção auditável para ${entry.name}; nenhuma integração foi executada.` });
+        setCoreMessage(`Executor registrou uma intenção com estado ${result.status}; nenhuma chamada externa ocorreu.`);
+        return;
+      }
+      await observeCoreRole.mutateAsync({ roleId, summary: roleId === "monitor" ? "Inspeção manual dos limites e estados do ciclo." : "Observação para melhoria gradual submetida à revisão humana." });
+      setCoreMessage(`${roleId === "monitor" ? "Monitor" : "Optimizer"} registrou telemetria sem alterar código, credenciais ou conectores.`);
+    } catch {
+      setActionError("Não foi possível registrar a telemetria do papel selecionado. Nenhuma ação externa foi executada.");
     }
   };
 
@@ -124,6 +152,21 @@ export default function Orchestration() {
           <Card className="border-teal-200/80 bg-white/75 shadow-sm"><CardHeader className="pb-3"><CardDescription>Eventos recebidos</CardDescription><CardTitle className="text-3xl">{data.inbox.length}</CardTitle></CardHeader><CardContent className="text-xs text-muted-foreground">Endpoint assinado e idempotente do Nexus.</CardContent></Card>
         </section>
 
+        <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+          <Card className="glass-panel border-violet-200/80">
+            <CardHeader><CardTitle className="flex items-center gap-2"><BrainCircuit className="h-5 w-5 text-violet-700" /> Pulse interno protegido</CardTitle><CardDescription>Maturidade operacional baseada em evidências curadas e revisões; não representa senciência nem libera ações autônomas.</CardDescription></CardHeader>
+            <CardContent className="space-y-4"><div className="flex items-end justify-between rounded-xl bg-violet-50/70 p-4"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">Índice de maturidade</p><p className="mt-1 text-4xl font-black">{data.maturity.score}</p></div><Badge variant="secondary">{data.maturity.level}</Badge></div><div className="grid grid-cols-3 gap-2 text-center text-xs"><div className="rounded-lg bg-muted/60 p-3"><b className="block text-base">{data.maturity.evidenceCount}</b>evidências</div><div className="rounded-lg bg-muted/60 p-3"><b className="block text-base">{data.maturity.reviewedMemoryCount}</b>memórias curadas</div><div className="rounded-lg bg-muted/60 p-3"><b className="block text-base">{data.maturity.approvedProposalCount}</b>revisões</div></div><p className="rounded-lg border border-violet-200 bg-white/70 p-3 text-xs text-muted-foreground">Teto atual: <strong>{data.maturity.autonomyCeiling}</strong>. Qualquer conexão, chamada externa, credencial ou mudança de código exige aprovação humana.</p></CardContent>
+          </Card>
+          <Card className="glass-panel">
+            <CardHeader><CardTitle>Memória, roteamento e ferramentas</CardTitle><CardDescription>Os contratos solicitados ficam inativos por padrão. Registrar uma proposta nunca executa integrações externas.</CardDescription></CardHeader>
+            <CardContent className="space-y-3">{data.catalog.map(entry => <div key={entry.id} className="rounded-xl border bg-white/70 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-semibold">{entry.name}</p><p className="mt-1 text-xs text-muted-foreground">{entry.kind} · risco {entry.riskLevel}</p></div><Badge variant={entry.status === "bloqueado" ? "destructive" : entry.status === "ativado" ? "outline" : "secondary"}>{entry.status}</Badge></div><p className="mt-2 text-xs text-muted-foreground">{entry.guardrail}</p><div className="mt-3 flex flex-wrap gap-2">{user?.role === "admin" && entry.status === "catálogo" ? <Button size="sm" variant="outline" onClick={() => stageCatalogEntry.mutate({ entryId: entry.id, status: "aguardando aprovação" })} disabled={stageCatalogEntry.isPending}>Solicitar revisão</Button> : null}<Button size="sm" variant="ghost" onClick={() => proposeCatalogAction.mutate({ catalogEntryId: entry.id, action: "avaliar contrato", requestSummary: `Solicitação de avaliação auditável para ${entry.name}.` })} disabled={proposeCatalogAction.isPending}>Registrar proposta</Button></div></div>)}</CardContent>
+          </Card>
+        </section>
+
+        <section className="space-y-3"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{data.coreRoles.map(role => <Card key={role.id} className="border-slate-200 bg-white/75 shadow-sm"><CardHeader className="pb-2"><div className="flex items-center justify-between gap-2"><CardTitle className="text-base">{role.name}</CardTitle><Badge variant={role.latestAudit ? statusTone(role.latestAudit.status) : "secondary"}>{role.latestAudit?.status ?? "sem telemetria"}</Badge></div><CardDescription className="min-h-10 text-xs">{role.description}</CardDescription></CardHeader><CardContent className="space-y-2"><p className="min-h-12 rounded-lg bg-slate-50 p-2 text-xs text-slate-600">{role.latestAudit ? `${role.latestAudit.eventName} · ${formatDate(role.latestAudit.createdAt)}` : role.boundary}</p><Button size="sm" variant="outline" className="w-full" onClick={() => operateCoreRole(role.id)} disabled={retrieveMemory.isPending || proposeCatalogAction.isPending || observeCoreRole.isPending}>Registrar telemetria</Button></CardContent></Card>)}</div>{coreMessage ? <p className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm text-cyan-900">{coreMessage}</p> : null}</section>
+
+        <section><Card className="glass-panel"><CardHeader><CardTitle>Trilha auditável do Core</CardTitle><CardDescription>Histórico persistido de Planner, Executor, Monitor e Optimizer. Cada item informa evidências, status e instante; nenhum registro comprova execução externa.</CardDescription></CardHeader><CardContent className="space-y-2">{data.coreRoleAudit.length ? data.coreRoleAudit.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-white/70 p-3"><div className="min-w-0"><p className="text-sm font-semibold">{item.roleId} · {item.eventName}</p><p className="truncate text-xs text-muted-foreground">{item.summary}</p></div><div className="flex items-center gap-2 text-xs text-muted-foreground"><span>{item.evidenceCount} evidência(s)</span><Badge variant={statusTone(item.status)}>{item.status}</Badge><span>{formatDate(item.createdAt)}</span></div></div>) : <p className="text-sm text-muted-foreground">Nenhum registro funcional do Core ainda. Use os controles acima para criar uma telemetria segura.</p>}</CardContent></Card></section>
+
         <section className="grid gap-6 xl:grid-cols-[1.1fr_1.9fr]">
           <Card className="glass-panel">
             <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> Controles de segurança</CardTitle><CardDescription>O ciclo só será disparado periodicamente após publicação e registro da tarefa agendada.</CardDescription></CardHeader>
@@ -148,7 +191,7 @@ export default function Orchestration() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <Card className="glass-panel"><CardHeader><CardTitle>Memória recente</CardTitle></CardHeader><CardContent className="space-y-2">{data.memories.length ? data.memories.map(memory => <div key={memory.id} className="rounded-lg border bg-white/70 p-3"><p className="font-semibold">{memory.title}</p><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{memory.summary ?? memory.content}</p></div>) : <p className="text-sm text-muted-foreground">A memória crescerá a partir de notas curadas, referências e sínteses aprovadas.</p>}</CardContent></Card>
+          <Card className="glass-panel"><CardHeader><CardTitle>Memória recente</CardTitle></CardHeader><CardContent className="space-y-2">{data.memories.length ? data.memories.map(memory => <div key={memory.id} className="rounded-lg border bg-white/70 p-3"><div className="flex items-start justify-between gap-2"><p className="font-semibold">{memory.title}</p><Badge variant="outline">confiança {memory.trustScore}</Badge></div><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{memory.summary ?? memory.content}</p><div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted-foreground"><span>{memory.retentionClass}{memory.reviewedAt ? " · curadoria registrada" : ""}</span>{user?.role === "admin" && memory.retentionClass !== "curada" ? <Button size="sm" variant="ghost" onClick={() => reviewMemory.mutate({ memoryId: memory.id, trustScore: 100, retentionClass: "curada" })} disabled={reviewMemory.isPending}>Curar</Button> : null}</div></div>) : <p className="text-sm text-muted-foreground">A memória crescerá a partir de notas curadas, referências e sínteses aprovadas.</p>}</CardContent></Card>
           <Card className="glass-panel"><CardHeader><CardTitle className="flex items-center gap-2"><Activity className="h-5 w-5 text-primary" /> Execuções recentes</CardTitle></CardHeader><CardContent className="space-y-2">{data.runs.length ? data.runs.map(run => <div key={run.id} className="flex items-center justify-between gap-3 rounded-lg border bg-white/70 p-3"><div><p className="text-sm font-semibold">{run.trigger} · {formatDate(run.startedAt)}</p><p className="text-xs text-muted-foreground">{run.evidenceCount} evidências · {run.retrievedCount} memórias recuperadas</p></div><Badge variant={statusTone(run.status)}>{run.status}</Badge></div>) : <p className="text-sm text-muted-foreground">Nenhum ciclo registrado ainda.</p>}</CardContent></Card>
         </section>
 
@@ -156,6 +199,8 @@ export default function Orchestration() {
           <Card className="glass-panel"><CardHeader><CardTitle>Runtime de provedores</CardTitle><CardDescription>Somente provedores previamente validados são considerados ativos.</CardDescription></CardHeader><CardContent className="space-y-2">{providersQuery.isError || previewFailure === "providers" ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">Não foi possível consultar provedores. <Button variant="link" className="h-auto p-0 text-red-800" onClick={() => retryQuery("providers")}>Tentar novamente</Button></div> : providers?.items.map(provider => <div key={provider.id} className="flex items-center justify-between gap-3 rounded-lg border bg-white/70 p-3"><div><p className="text-sm font-semibold">{provider.name}</p><p className="text-xs text-muted-foreground">{provider.id}</p></div><Badge variant={provider.status === "ativo" ? "outline" : "secondary"}>{provider.status}</Badge></div>) ?? <p className="text-sm text-muted-foreground">Carregando os provedores registrados…</p>}</CardContent></Card>
           <Card className="glass-panel"><CardHeader><CardTitle>Adaptadores JBCx19</CardTitle><CardDescription>Os contratos permanecem no catálogo até que sejam revisados e configurados com credencial oficial ou host autorizado.</CardDescription></CardHeader><CardContent className="space-y-2">{adaptersQuery.isError || previewFailure === "adapters" ? <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">Não foi possível consultar adaptadores. <Button variant="link" className="h-auto p-0 text-red-800" onClick={() => retryQuery("adapters")}>Tentar novamente</Button></div> : adapters?.items.slice(0, 6).map(adapter => <div key={adapter.id} className="flex items-center justify-between gap-3 rounded-lg border bg-white/70 p-3"><div><p className="text-sm font-semibold">{adapter.repository}</p><p className="text-xs text-muted-foreground">{adapter.activationMode}</p></div><Badge variant={adapter.profile?.status === "ativo" ? "outline" : "secondary"}>{adapter.profile?.status ?? "não configurado"}</Badge></div>) ?? <p className="text-sm text-muted-foreground">Carregando os adaptadores registrados…</p>}</CardContent></Card>
         </section>
+
+        <section><Card className="glass-panel"><CardHeader><CardTitle>Auditoria de propostas de ferramentas</CardTitle><CardDescription>Registros de intenção; nenhuma entrada nesta lista executa rotas, ferramentas ou conectores.</CardDescription></CardHeader><CardContent className="space-y-2">{data.toolInvocations.length ? data.toolInvocations.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-white/70 p-3"><div><p className="text-sm font-semibold">{item.action}</p><p className="text-xs text-muted-foreground">{item.requestSummary}</p></div><Badge variant={statusTone(item.status)}>{item.status}</Badge></div>) : <p className="text-sm text-muted-foreground">Nenhuma proposta de ferramenta registrada.</p>}</CardContent></Card></section>
       </div>
     </main>
   );

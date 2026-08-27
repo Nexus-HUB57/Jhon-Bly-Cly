@@ -6,11 +6,15 @@ import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 import { rankMemories } from "../memory";
 import { makeIdempotencyKey, runGovernedCycle } from "../orchestration";
 import {
+  createGovernedToolInvocation,
   getOrchestrationDashboard,
   listKnowledgeMemories,
   recordMemoryRetrieval,
+  recordCoreRoleAudit,
+  reviewKnowledgeMemory,
   reviewImprovementProposal,
   saveKnowledgeMemory,
+  updateGovernanceCatalogEntry,
   updateOrchestrationCycle,
 } from "../orchestrationDb";
 
@@ -28,6 +32,20 @@ const heartbeatCronSchema = z.string().trim().regex(/^\S+(\s+\S+){5}$/, "Use cro
 function sessionFromRequest(req: { headers: { cookie?: string } }) {
   const encoded = req.headers.cookie?.split(";").map(value => value.trim()).find(value => value.startsWith(`${COOKIE_NAME}=`))?.slice(COOKIE_NAME.length + 1);
   return encoded ? decodeURIComponent(encoded) : "";
+}
+
+async function retrieveContext(input: { userId: number; query: string; projectId?: number }) {
+  const memories = await listKnowledgeMemories(input.userId, input.projectId);
+  const results = rankMemories(input.query, memories);
+  await recordMemoryRetrieval({
+    userId: input.userId,
+    projectId: input.projectId,
+    query: input.query,
+    retrievedMemoryIds: results.map(memory => memory.id),
+    retrievedEvidence: results.map(memory => ({ id: memory.id, score: memory.score, trustScore: memory.trustScore, retentionClass: memory.retentionClass, sourceType: memory.sourceType, projectId: memory.projectId })),
+  });
+  await recordCoreRoleAudit({ userId: input.userId, roleId: "planner", eventName: "Recuperação contextual", status: results.length ? "pronto" : "aguardando evidências", evidenceCount: results.length, summary: `Consulta auditável com ${results.length} memória(s) recuperada(s).` });
+  return results;
 }
 
 export const orchestrationRouter = router({
@@ -50,16 +68,10 @@ export const orchestrationRouter = router({
   }),
 
   retrieveMemory: protectedProcedure.input(z.object({ query: z.string().trim().min(3).max(500), projectId: z.number().int().positive().optional() })).query(async ({ ctx, input }) => {
-    const memories = await listKnowledgeMemories(ctx.user.id, input.projectId);
-    const results = rankMemories(input.query, memories);
-    await recordMemoryRetrieval({
-      userId: ctx.user.id,
-      projectId: input.projectId,
-      query: input.query,
-      retrievedMemoryIds: results.map(memory => memory.id),
-    });
-    return results;
+    return retrieveContext({ userId: ctx.user.id, ...input });
   }),
+
+  plannerRetrieve: protectedProcedure.input(z.object({ query: z.string().trim().min(3).max(500), projectId: z.number().int().positive().optional() })).mutation(({ ctx, input }) => retrieveContext({ userId: ctx.user.id, ...input })),
 
   resume: protectedProcedure.input(z.object({ scheduleCron: heartbeatCronSchema.optional() })).mutation(async ({ ctx, input }) => {
     const cycle = await updateOrchestrationCycle({ userId: ctx.user.id, status: "pronto", scheduleCron: input.scheduleCron, pausedReason: null });
@@ -74,6 +86,7 @@ export const orchestrationRouter = router({
     if (cycle.taskUid && process.env.NODE_ENV === "production") {
       await updateHeartbeatJob(cycle.taskUid, { enable: false }, sessionFromRequest(ctx.req));
     }
+    await recordCoreRoleAudit({ userId: ctx.user.id, roleId: "monitor", eventName: "Pausa de ciclo", status: "observando", summary: `Ciclo pausado para revisão: ${input.reason}` });
     return cycle;
   }),
 
@@ -117,6 +130,45 @@ export const orchestrationRouter = router({
       reviewNote: input.note,
     });
     if (!reviewed) throw new TRPCError({ code: "NOT_FOUND", message: "Proposta não encontrada." });
+    await recordCoreRoleAudit({ userId: ctx.user.id, roleId: "optimizer", eventName: "Revisão de proposta", status: input.status === "aprovada" ? "pronto" : "aguardando revisão", summary: `Proposta ${input.proposalId} foi ${input.status}.` });
     return { success: true, actionExecuted: false };
+  }),
+
+  reviewMemory: adminProcedure.input(z.object({
+    memoryId: z.number().int().positive(),
+    trustScore: z.number().int().min(0).max(100),
+    retentionClass: z.enum(["curta", "padrão", "curada"]),
+  })).mutation(async ({ ctx, input }) => {
+    const memory = await reviewKnowledgeMemory({ userId: ctx.user.id, ...input });
+    if (!memory) throw new TRPCError({ code: "NOT_FOUND", message: "Memória não encontrada." });
+    return memory;
+  }),
+
+  stageCatalogEntry: adminProcedure.input(z.object({
+    entryId: z.number().int().positive(),
+    status: z.enum(["catálogo", "aguardando aprovação", "bloqueado"]),
+  })).mutation(async ({ ctx, input }) => {
+    const entry = await updateGovernanceCatalogEntry({ userId: ctx.user.id, ...input });
+    if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "Entrada de catálogo não encontrada." });
+    return entry;
+  }),
+
+  proposeCatalogAction: protectedProcedure.input(z.object({
+    catalogEntryId: z.number().int().positive(),
+    action: z.string().trim().min(3).max(255),
+    requestSummary: z.string().trim().min(3).max(2_000),
+  })).mutation(async ({ ctx, input }) => {
+    const proposal = await createGovernedToolInvocation({ userId: ctx.user.id, ...input });
+    await recordCoreRoleAudit({ userId: ctx.user.id, roleId: "executor", eventName: "Intenção de ferramenta", status: proposal.status === "bloqueada" ? "bloqueado" : "aguardando revisão", summary: `Intenção registrada para ${input.action}; execução externa não ocorreu.` });
+    return proposal;
+  }),
+
+  observeCoreRole: protectedProcedure.input(z.object({
+    roleId: z.enum(["planner", "executor", "monitor", "optimizer"]),
+    summary: z.string().trim().min(3).max(500),
+  })).mutation(async ({ ctx, input }) => {
+    const status = input.roleId === "monitor" ? "observando" : input.roleId === "optimizer" ? "aguardando revisão" : "pronto";
+    const id = await recordCoreRoleAudit({ userId: ctx.user.id, roleId: input.roleId, eventName: "Observação manual", status, summary: input.summary });
+    return { id, executed: false };
   }),
 });

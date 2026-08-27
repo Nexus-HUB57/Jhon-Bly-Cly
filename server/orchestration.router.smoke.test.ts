@@ -2,11 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TrpcContext } from "./_core/context";
 
 const orchestrationDbMock = vi.hoisted(() => ({
+  createGovernedToolInvocation: vi.fn(),
   getOrchestrationDashboard: vi.fn(),
   listKnowledgeMemories: vi.fn(),
   recordMemoryRetrieval: vi.fn(),
+  recordCoreRoleAudit: vi.fn(),
+  reviewKnowledgeMemory: vi.fn(),
   reviewImprovementProposal: vi.fn(),
   saveKnowledgeMemory: vi.fn(),
+  updateGovernanceCatalogEntry: vi.fn(),
   updateOrchestrationCycle: vi.fn(),
 }));
 const fusionDbMock = vi.hoisted(() => ({ listFusionConnectorProfiles: vi.fn() }));
@@ -30,7 +34,11 @@ function authenticatedContext(): TrpcContext {
 describe("smoke autenticado da orquestração", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    orchestrationDbMock.getOrchestrationDashboard.mockResolvedValue({ cycle: { id: 1, status: "pausado" }, runs: [], proposals: [], memories: [], inbox: [] });
+    orchestrationDbMock.getOrchestrationDashboard.mockResolvedValue({ cycle: { id: 1, status: "pausado" }, runs: [], proposals: [], memories: [], inbox: [], maturity: { score: 0, level: "observação" }, catalog: [], toolInvocations: [] });
+    orchestrationDbMock.listKnowledgeMemories.mockResolvedValue([]);
+    orchestrationDbMock.recordMemoryRetrieval.mockResolvedValue(undefined);
+    orchestrationDbMock.recordCoreRoleAudit.mockResolvedValue(1);
+    orchestrationDbMock.createGovernedToolInvocation.mockResolvedValue({ id: 1, status: "bloqueada", executed: false });
     fusionDbMock.listFusionConnectorProfiles.mockResolvedValue([]);
   });
 
@@ -47,5 +55,19 @@ describe("smoke autenticado da orquestração", () => {
     expect(adapters.items).toHaveLength(19);
     expect(orchestrationDbMock.getOrchestrationDashboard).toHaveBeenCalledWith(1);
     expect(fusionDbMock.listFusionConnectorProfiles).toHaveBeenCalledWith(1);
+  });
+
+  it("registra telemetria funcional por papel sem executar efeitos externos", async () => {
+    const caller = orchestrationRouter.createCaller(authenticatedContext());
+    await caller.plannerRetrieve({ query: "contexto criativo" });
+    await caller.observeCoreRole({ roleId: "monitor", summary: "Inspeção dos limites de ciclo." });
+    await caller.observeCoreRole({ roleId: "optimizer", summary: "Observação de melhoria sujeita a revisão." });
+    await caller.proposeCatalogAction({ catalogEntryId: 1, action: "avaliar contrato", requestSummary: "Registrar intenção sem chamada externa." });
+
+    expect(orchestrationDbMock.recordCoreRoleAudit).toHaveBeenCalledWith(expect.objectContaining({ roleId: "planner", status: "aguardando evidências" }));
+    expect(orchestrationDbMock.recordCoreRoleAudit).toHaveBeenCalledWith(expect.objectContaining({ roleId: "monitor", status: "observando" }));
+    expect(orchestrationDbMock.recordCoreRoleAudit).toHaveBeenCalledWith(expect.objectContaining({ roleId: "optimizer", status: "aguardando revisão" }));
+    expect(orchestrationDbMock.recordCoreRoleAudit).toHaveBeenCalledWith(expect.objectContaining({ roleId: "executor", status: "bloqueado" }));
+    expect(orchestrationDbMock.createGovernedToolInvocation).toHaveBeenCalledWith(expect.objectContaining({ userId: 1, catalogEntryId: 1 }));
   });
 });
