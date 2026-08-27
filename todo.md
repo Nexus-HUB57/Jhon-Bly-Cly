@@ -98,7 +98,7 @@
 - [x] Permitir a retomada auditável de um projeto em falha para `rascunho`, sem apagar execuções, eventos ou evidências anteriores.
 - [x] Permitir um plano manual de vídeo de prova quando a síntese LLM estiver indisponível, mantendo revisão humana e eventos auditáveis.
 - [x] Corrigir a numeração de versões de planejamento para evitar estouro do tipo de banco durante a persistência do plano manual.
-- [ ] Atualizar a tela do projeto após falha de geração para refletir o estado persistido sem exigir recarga manual.
+- [x] Atualizar a tela do projeto após falha de geração para refletir o estado persistido sem exigir recarga manual.
 - [x] Cancelar, por decisão posterior do proprietário, a remoção de EVOMAP_API_TOKEN; nenhuma exclusão adicional será realizada.
 - [x] Confirmar que a configuração de implantação é distinta dos segredos do GitHub Actions, sem inspecionar ou expor o conteúdo do cofre.
 - [x] Encerrar a tentativa cirúrgica de remoção do Evomap após a decisão do proprietário de manter o provedor ativo.
@@ -110,3 +110,6 @@
 - [ ] Adicionar contrato/adaptador server-side do Evomap com cobertura de testes antes de tratá-lo como provedor ativo em integrações funcionais.
 - [ ] Confirmar integração funcional do Evomap antes de mantê-lo ativo no runtime; se a validação exigir OAuth/PKCE ainda não configurado, retornar o provedor ao estado inativo de catálogo.
 - [ ] Definir o contrato oficial do gateway Evomap aplicável à chave de conta, ou concluir o OAuth/PKCE com escopo mínimo, antes de executar uma chamada autenticada do Studio.
+- [x] Corrigir o callback Heartbeat para responder 500 estruturado em falhas de ciclo e preservar 403 somente para autenticação cron recusada.
+- [x] Marcar a mutation de geração de vídeo para tratamento local, evitando que sua falha de negócio já exibida ao operador seja registrada como erro global do navegador.
+- [x] Confirmar que a reversão da exposição pública preservou código, banco, ativos, checkpoints e o ambiente de desenvolvimento antes de concluí-la.

@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { startLogin } from "./const";
+import { isLocallyHandledMutation } from "./lib/errorHandling";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -33,7 +34,7 @@ queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
     redirectToLoginIfUnauthorized(error);
-    console.error("[API Mutation Error]", error);
+    if (!isLocallyHandledMutation(event.mutation.options.meta)) console.error("[API Mutation Error]", error);
   }
 });
 
