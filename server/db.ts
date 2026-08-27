@@ -172,7 +172,7 @@ export async function replaceProjectPlan(
     await tx.update(videoProjects).set({ script: plan.script, creativeSummary: plan.creativeSummary, status: "aguardando revisão", updatedAt: new Date() }).where(and(eq(videoProjects.id, projectId), eq(videoProjects.userId, userId)));
     await tx.insert(projectVersions).values({
       projectId,
-      versionNumber: Date.now(),
+      versionNumber: Math.floor(Date.now() / 1_000),
       versionType: "planejamento gerado",
       content: plan,
       createdBy: userId,
@@ -223,6 +223,22 @@ export async function createGenerationRun(input: {
 export async function completeGenerationRun(runId: number, status: TaskStatus, output?: unknown, errorMessage?: string) {
   const db = requireDatabase(await getDb());
   await db.update(generationRuns).set({ status, output, errorMessage, finishedAt: new Date() }).where(eq(generationRuns.id, runId));
+}
+
+export async function updateGenerationRunProgress(runId: number, output: unknown) {
+  const db = requireDatabase(await getDb());
+  await db.update(generationRuns).set({ output }).where(eq(generationRuns.id, runId));
+}
+
+export async function getGenerationRunForProject(runId: number, projectId: number, userId: number) {
+  const db = requireDatabase(await getDb());
+  const result = await db
+    .select({ run: generationRuns, project: videoProjects })
+    .from(generationRuns)
+    .innerJoin(videoProjects, eq(generationRuns.projectId, videoProjects.id))
+    .where(and(eq(generationRuns.id, runId), eq(generationRuns.projectId, projectId), eq(videoProjects.userId, userId)))
+    .limit(1);
+  return result[0];
 }
 
 export async function createProjectAsset(input: {

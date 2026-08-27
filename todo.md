@@ -21,12 +21,12 @@
 - [x] Implementar uma camada explícita de conectores seguros com elegibilidade, BYOK pendente, bloqueios por risco/licença e contrato de sincronização.
 - [x] Adicionar testes para catálogo, conectores seguros e bloqueio de fontes sensíveis ou instruções internas.
 - [x] Cobrir a nova camada com testes, validar build, salvar checkpoint e comitar a fusão no repositório Nexus-HUB57/Jhon-Bly-Cly.
-- [ ] Preparar o persona KTD e a faixa enviada como ativos de referência para o teste audiovisual de 8 segundos.
+- [x] Preparar o persona KTD e a faixa enviada como ativos de referência para o teste audiovisual de 8 segundos.
 - [ ] Gerar um vídeo experimental live action de 8 segundos com performance de estúdio e atmosfera musical coerente com a referência.
 - [ ] Validar o vídeo experimental, registrar o resultado no projeto e sincronizar a entrega no repositório Nexus-HUB57/Jhon-Bly-Cly.
-- [ ] Registrar o experimento KTD como projeto persistido e executar a geração exclusivamente pelo backend do Jhon Bly Cly.
+- [x] Registrar o experimento KTD como projeto persistido e executar a geração exclusivamente pelo backend do Jhon Bly Cly.
 - [x] Configurar a credencial oficial do conector audiovisual no sistema antes do disparo de vídeo.
-- [ ] Validar o resultado, as execuções e os eventos de orquestração da geração interna do sistema.
+- [x] Validar o resultado, as execuções e os eventos de orquestração da geração interna do sistema.
 - [x] Validar em sessão autenticada a página inicial após a correção da navegação e confirmar ausência do aviso de chaves duplicadas.
 - [x] Adicionar cobertura específica que garanta chaves únicas na navegação do DashboardLayout.
 - [x] Validar a home em sessão autenticada independente e registrar evidência de runtime sem o aviso de chaves duplicadas.
@@ -91,3 +91,11 @@
 - [x] Adicionar testes para o contrato funcional de Planner, Executor, Monitor e Optimizer, além da exibição dos papéis.
 - [x] Exibir a trilha auditável dos papéis do Core com evento, status, data e contagem de evidências no painel `/orchestration`.
 - [x] Executar smoke test autenticado acionando Planner, Executor, Monitor e Optimizer e confirmar a atualização visível do histórico por papel.
+- [ ] Corrigir a falha de publicação causada por um Dockerfile inválido ou excessivamente grande e validar um novo build de implantação.
+- [x] Preparar o projeto KTD com persona, referência visual e faixa sonora autorizada no workspace do Studio.
+- [x] Adaptar a solicitação oficial MiniMax para referências multimodais somente se os formatos, URLs e limites do provedor forem confirmados.
+- [x] Disparar pelo JBC um vídeo de prova live action de 8 segundos e acompanhar o estado assíncrono até resultado, falha auditável ou limitação do provedor.
+- [x] Permitir a retomada auditável de um projeto em falha para `rascunho`, sem apagar execuções, eventos ou evidências anteriores.
+- [x] Permitir um plano manual de vídeo de prova quando a síntese LLM estiver indisponível, mantendo revisão humana e eventos auditáveis.
+- [x] Corrigir a numeração de versões de planejamento para evitar estouro do tipo de banco durante a persistência do plano manual.
+- [ ] Atualizar a tela do projeto após falha de geração para refletir o estado persistido sem exigir recarga manual.

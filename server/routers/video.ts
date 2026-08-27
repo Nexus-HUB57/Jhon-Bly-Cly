@@ -6,6 +6,7 @@ import {
   createOrchestraEvent,
   createProjectAsset,
   createVideoProject,
+  getGenerationRunForProject,
   getProjectWorkspace,
   listReferenceAssets,
   getSceneForUser,
@@ -14,14 +15,15 @@ import {
   recordOrchestraDelivery,
   replaceProjectPlan,
   updateScene,
+  updateGenerationRunProgress,
   updateProjectScenesStatus,
   updateVideoProject,
 } from "../db";
 import { generateImage } from "../_core/imageGeneration";
 import { invokeLLM } from "../_core/llm";
-import { storagePut } from "../storage";
+import { storageGetSignedUrl, storagePut } from "../storage";
 import { deliverToNexusOrchestra } from "../orchestra";
-import { createMiniMaxVideoTask, hasMiniMaxCredentials } from "../minimax";
+import { createMiniMaxVideoTask, hasMiniMaxCredentials, queryMiniMaxVideoTask } from "../minimax";
 import { rankMemories } from "../memory";
 import { listKnowledgeMemories, recordMemoryRetrieval } from "../orchestrationDb";
 import { canTransitionTaskStatus, TASK_STATUSES } from "../../shared/video";
@@ -47,6 +49,26 @@ const sceneInput = z.object({
   productionPrompt: z.string().trim().min(2).max(6_000).optional(),
   storyboardPrompt: z.string().trim().min(2).max(6_000).optional(),
   status: taskStatusSchema.optional(),
+});
+
+const manualPlanInput = z.object({
+  projectId: z.number().int().positive(),
+  creativeSummary: z.string().trim().min(12).max(2_000),
+  script: z.string().trim().min(12).max(6_000),
+  scene: z.object({
+    title: z.string().trim().min(3).max(180),
+    durationSeconds: z.number().int().min(4).max(15),
+    narrative: z.string().trim().min(12).max(3_000),
+    camera: z.string().trim().min(3).max(1_000),
+    visualPrompt: z.string().trim().min(12).max(4_000),
+    productionPrompt: z.string().trim().min(12).max(4_000),
+    storyboardPrompt: z.string().trim().min(12).max(4_000),
+  }),
+});
+
+const videoReferenceInput = z.object({
+  assetId: z.number().int().positive(),
+  audioDurationSeconds: z.number().int().min(2).max(15).optional(),
 });
 
 function fail(code: "NOT_FOUND" | "BAD_REQUEST" | "CONFLICT", message: string): never {
@@ -135,6 +157,51 @@ export const videoRouter = router({
       });
       return { projectId };
     }),
+    retryFailed: protectedProcedure.input(z.object({ projectId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const project = await getVideoProject(input.projectId, ctx.user.id);
+      if (!project) fail("NOT_FOUND", "Projeto não encontrado.");
+      if (project.status !== "com falha") fail("CONFLICT", "A retomada está disponível somente para projetos com falha.");
+      if (!canTransitionTaskStatus(project.status, "rascunho")) fail("CONFLICT", "O projeto não pode retornar ao rascunho no estado atual.");
+
+      await updateVideoProject(input.projectId, ctx.user.id, { status: "rascunho" });
+      await publishEvent({
+        projectId: input.projectId,
+        eventName: "video.project.retry_started",
+        entityType: "project",
+        entityId: input.projectId,
+        payload: { from: "com falha", to: "rascunho", reason: "retomada manual auditável" },
+      });
+      return { success: true, status: "rascunho" as const };
+    }),
+    createManualPlan: protectedProcedure.input(manualPlanInput).mutation(async ({ ctx, input }) => {
+      const project = await getVideoProject(input.projectId, ctx.user.id);
+      if (!project) fail("NOT_FOUND", "Projeto não encontrado.");
+      if (!canTransitionTaskStatus(project.status, "planejando")) fail("CONFLICT", `O projeto está em ${project.status} e não pode receber um plano manual agora.`);
+
+      await updateVideoProject(input.projectId, ctx.user.id, { status: "planejando" });
+      const runId = await createGenerationRun({
+        projectId: input.projectId,
+        runType: "planejamento",
+        status: "planejando",
+        input: { source: "revisão humana", sceneDurationSeconds: input.scene.durationSeconds },
+      });
+      try {
+        await replaceProjectPlan(input.projectId, ctx.user.id, {
+          script: input.script,
+          creativeSummary: input.creativeSummary,
+          scenes: [{ ...input.scene, sceneNumber: 1, status: "aguardando revisão" }],
+        });
+        await completeGenerationRun(runId, "concluído", { scenesCreated: 1, source: "revisão humana" });
+        await publishEvent({ projectId: input.projectId, eventName: "video.planning.manual_ready_for_review", entityType: "generation_run", entityId: runId, payload: { scenesCreated: 1, status: "aguardando revisão", source: "revisão humana" } });
+        return { success: true, scenesCreated: 1 };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Erro ao registrar o plano manual.";
+        await updateVideoProject(input.projectId, ctx.user.id, { status: "com falha" });
+        await completeGenerationRun(runId, "com falha", undefined, message);
+        await publishEvent({ projectId: input.projectId, eventName: "video.planning.manual_failed", entityType: "generation_run", entityId: runId, payload: { message, status: "com falha" } });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
+      }
+    }),
     update: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), data: projectInput.partial() })).mutation(async ({ ctx, input }) => {
       const project = await getVideoProject(input.projectId, ctx.user.id);
       if (!project) fail("NOT_FOUND", "Projeto não encontrado.");
@@ -208,7 +275,55 @@ export const videoRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message });
       }
     }),
-    requestVideoGeneration: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), duration: z.number().int().min(4).max(15).default(8) })).mutation(async ({ ctx, input }) => {
+    pollVideoGeneration: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), runId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const record = await getGenerationRunForProject(input.runId, input.projectId, ctx.user.id);
+      if (!record) fail("NOT_FOUND", "Execução de vídeo não encontrada para este projeto.");
+      if (record.run.runType !== "vídeo") fail("BAD_REQUEST", "A execução informada não é uma geração de vídeo.");
+
+      const output = record.run.output && typeof record.run.output === "object" ? record.run.output as { taskId?: unknown } : {};
+      const taskId = typeof output.taskId === "string" ? output.taskId : undefined;
+      if (!taskId) fail("CONFLICT", "Esta execução ainda não possui uma tarefa MiniMax registrada.");
+      if (record.run.status === "concluído" || record.run.status === "com falha") return { runId: input.runId, status: record.run.status, terminal: true };
+
+      let task;
+      try {
+        task = (await queryMiniMaxVideoTask(taskId)).task;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Não foi possível consultar o provedor de vídeo.";
+        await publishEvent({ projectId: input.projectId, eventName: "video.generation.poll_failed", entityType: "generation_run", entityId: input.runId, payload: { taskId, message } });
+        throw new TRPCError({ code: "BAD_GATEWAY", message });
+      }
+
+      if (task.status === "queued" || task.status === "running") {
+        await updateGenerationRunProgress(input.runId, { taskId, provider: "MiniMax-H3", providerStatus: task.status });
+        await publishEvent({ projectId: input.projectId, eventName: "video.generation.progress", entityType: "generation_run", entityId: input.runId, payload: { taskId, providerStatus: task.status, status: "gerando" } });
+        return { runId: input.runId, status: "gerando" as const, providerStatus: task.status, terminal: false };
+      }
+
+      if (task.status === "succeeded" && task.content?.url) {
+        let resultUrl: URL;
+        try {
+          resultUrl = new URL(task.content.url);
+        } catch {
+          throw new TRPCError({ code: "BAD_GATEWAY", message: "O provedor retornou um endereço de vídeo inválido." });
+        }
+        if (resultUrl.protocol !== "https:" && resultUrl.protocol !== "http:") throw new TRPCError({ code: "BAD_GATEWAY", message: "O provedor retornou um protocolo de vídeo não permitido." });
+        const assetId = await createProjectAsset({ projectId: input.projectId, uploadedBy: ctx.user.id, name: `Resultado MiniMax — ${new Date().toISOString()}`, url: resultUrl.toString(), mimeType: "video/mp4", byteSize: 0, kind: "resultado de vídeo" });
+        await updateVideoProject(input.projectId, ctx.user.id, { status: "concluído" });
+        await updateProjectScenesStatus(input.projectId, "concluído");
+        await completeGenerationRun(input.runId, "concluído", { taskId, provider: "MiniMax-H3", providerStatus: "succeeded", assetId, resultUrl: resultUrl.toString() });
+        await publishEvent({ projectId: input.projectId, eventName: "video.generation.completed", entityType: "asset", entityId: assetId, payload: { runId: input.runId, taskId, status: "concluído" } });
+        return { runId: input.runId, status: "concluído" as const, assetId, terminal: true };
+      }
+
+      const message = task.error?.message || (task.status === "cancelled" ? "A tarefa foi cancelada pelo provedor." : "O provedor não retornou um resultado de vídeo válido.");
+      await updateVideoProject(input.projectId, ctx.user.id, { status: "com falha" });
+      await updateProjectScenesStatus(input.projectId, "com falha");
+      await completeGenerationRun(input.runId, "com falha", { taskId, provider: "MiniMax-H3", providerStatus: task.status }, message);
+      await publishEvent({ projectId: input.projectId, eventName: "video.generation.failed", entityType: "generation_run", entityId: input.runId, payload: { taskId, providerStatus: task.status, status: "com falha", message } });
+      return { runId: input.runId, status: "com falha" as const, terminal: true, message };
+    }),
+    requestVideoGeneration: protectedProcedure.input(z.object({ projectId: z.number().int().positive(), duration: z.number().int().min(4).max(15).default(8), references: z.array(videoReferenceInput).max(12).default([]) })).mutation(async ({ ctx, input }) => {
       const project = await getVideoProject(input.projectId, ctx.user.id);
       if (!project) fail("NOT_FOUND", "Projeto não encontrado.");
       if (!canTransitionTaskStatus(project.status, "gerando")) {
@@ -220,18 +335,33 @@ export const videoRouter = router({
         throw new TRPCError({ code: "PRECONDITION_FAILED", message: "O conector MiniMax está preparado, mas aguarda uma credencial oficial para gerar o vídeo." });
       }
 
+      const workspace = await getProjectWorkspace(input.projectId, ctx.user.id);
+      if (!workspace) fail("NOT_FOUND", "Projeto não encontrado.");
+      const assetsById = new Map(workspace.assets.map(asset => [asset.id, asset]));
+      const references = await Promise.all(input.references.map(async reference => {
+        const asset = assetsById.get(reference.assetId);
+        if (!asset?.storageKey) fail("BAD_REQUEST", "A referência informada não pertence ao projeto ou não está disponível no armazenamento.");
+        if (asset.mimeType.startsWith("image/")) return { kind: "image" as const, url: await storageGetSignedUrl(asset.storageKey) };
+        if (asset.mimeType === "audio/mpeg" || asset.mimeType === "audio/wav" || asset.mimeType === "audio/x-wav") {
+          if (!reference.audioDurationSeconds) fail("BAD_REQUEST", "Informe uma duração entre 2 e 15 segundos para cada áudio de referência.");
+          return { kind: "audio" as const, url: await storageGetSignedUrl(asset.storageKey), durationSeconds: reference.audioDurationSeconds };
+        }
+        fail("BAD_REQUEST", "Apenas imagens e áudios MP3/WAV são aceitos como referência MiniMax.");
+      }));
+
       const runId = await createGenerationRun({
         projectId: input.projectId,
         runType: "vídeo",
         status: "gerando",
-        input: { requestedAt: new Date().toISOString(), source: "workspace", provider: "MiniMax-H3", duration: input.duration },
+        input: { requestedAt: new Date().toISOString(), source: "workspace", provider: "MiniMax-H3", duration: input.duration, referenceAssetIds: input.references.map(reference => reference.assetId) },
       });
       await updateVideoProject(input.projectId, ctx.user.id, { status: "gerando" });
       await updateProjectScenesStatus(input.projectId, "gerando");
       try {
         const ratio = project.format === "16:9" || project.format === "9:16" || project.format === "1:1" ? project.format : "16:9";
-        const task = await createMiniMaxVideoTask({ prompt: project.script || project.briefing, duration: input.duration, ratio, resolution: "768P" });
-        await publishEvent({ projectId: input.projectId, eventName: "video.generation.requested", entityType: "generation_run", entityId: runId, payload: { status: "gerando", orchestration: "Nexus_Orchestra", provider: "MiniMax-H3", taskId: task.task_id } });
+        const task = await createMiniMaxVideoTask({ prompt: project.script || project.briefing, duration: input.duration, ratio, resolution: "768P", references });
+        await updateGenerationRunProgress(runId, { taskId: task.task_id, provider: "MiniMax-H3", providerStatus: "queued", referenceAssetIds: input.references.map(reference => reference.assetId) });
+        await publishEvent({ projectId: input.projectId, eventName: "video.generation.requested", entityType: "generation_run", entityId: runId, payload: { status: "gerando", orchestration: "Nexus_Orchestra", provider: "MiniMax-H3", taskId: task.task_id, referenceCount: references.length } });
         return { runId, taskId: task.task_id, status: "gerando" as const };
       } catch (error) {
         const message = error instanceof Error ? error.message : "Falha ao solicitar o vídeo ao provedor.";

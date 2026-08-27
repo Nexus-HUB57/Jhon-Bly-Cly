@@ -29,6 +29,7 @@ describe("workflow de vídeo", () => {
     expect(canTransitionTaskStatus("planejando", "aguardando revisão")).toBe(true);
     expect(canTransitionTaskStatus("aguardando revisão", "gerando")).toBe(true);
     expect(canTransitionTaskStatus("gerando", "concluído")).toBe(true);
+    expect(canTransitionTaskStatus("com falha", "rascunho")).toBe(true);
     expect(canTransitionTaskStatus("gerando", "rascunho")).toBe(false);
     expect(canTransitionTaskStatus("concluído", "aguardando revisão")).toBe(false);
   });
