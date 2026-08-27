@@ -17,7 +17,7 @@ export const PROVIDER_RUNTIME_REGISTRY: readonly ProviderRuntime[] = [
   { id: "gemini", name: "Google AI Studio", status: "ativo", integration: "Gemini API server-side", activation: "Chave oficial validada", rationale: "Capacidade multimodal sob controle do backend." },
   { id: "alibaba-model-studio", name: "Alibaba Model Studio", status: "inativo", integration: "Conector DashScope preparado", activation: "Aguarda credencial validada", rationale: "Mantido inativo sem chamadas externas." },
   { id: "digitalocean", name: "DigitalOcean", status: "inativo", integration: "API de infraestrutura preparada", activation: "Aguarda token validado", rationale: "Mantido inativo sem alterações na infraestrutura." },
-  { id: "evomap", name: "Evomap", status: "inativo", integration: "OAuth + PKCE preparado", activation: "Aguarda token ou OAuth validado", rationale: "Mantido inativo até autorização explícita de escopo." },
+  { id: "evomap", name: "Evomap", status: "ativo", integration: "OAuth + PKCE preparado", activation: "Credencial oficial registrada no cofre e ativação autorizada", rationale: "Provedor real habilitado somente por contrato server-side e controles de acesso do Studio." },
 ] as const;
 
 export function isRuntimeProviderEnabled(id: ProviderRuntime["id"]) {

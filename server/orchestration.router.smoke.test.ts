@@ -51,7 +51,7 @@ describe("smoke autenticado da orquestração", () => {
     ]);
 
     expect(dashboard.cycle.status).toBe("pausado");
-    expect(providers.summary).toEqual({ total: 8, active: 5, inactive: 3 });
+    expect(providers.summary).toEqual({ total: 8, active: 6, inactive: 2 });
     expect(adapters.items).toHaveLength(19);
     expect(orchestrationDbMock.getOrchestrationDashboard).toHaveBeenCalledWith(1);
     expect(fusionDbMock.listFusionConnectorProfiles).toHaveBeenCalledWith(1);

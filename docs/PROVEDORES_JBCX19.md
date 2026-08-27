@@ -14,7 +14,9 @@ Cada provedor só será ativado com uma credencial oficial inserida no armazenam
 
 ## Estado de ativação atual
 
-O conjunto ativo e validado do JBCx19 é **MiniMax, OpenAI, Llama, Z.AI e Google AI Studio**. Os conectores de Alibaba Cloud Model Studio, DigitalOcean e Evomap foram preservados em estado **inativo**; eles não participam de chamadas, testes de runtime ou fluxos de agentes até receberem uma credencial oficial validada. Esse estado não remove variáveis protegidas, nem altera artefatos existentes do workspace.
+O conjunto ativo autorizado do JBCx19 é **MiniMax, OpenAI, Llama, Z.AI, Google AI Studio e Evomap**. Alibaba Cloud Model Studio e DigitalOcean permanecem **inativos**. A ativação do Evomap foi autorizada pelo proprietário e sua credencial permanece exclusivamente no cofre protegido; o valor não é exposto no código, na interface, nos logs ou nesta documentação.
+
+O estado `ativo` do registro Evomap significa que o Studio pode apresentar o provedor como elegível por um contrato server-side controlado. Isso não habilita ciclos autônomos, publicação externa, registro de nós, uso de ferramentas remotas ou consumo de créditos. Os endpoints de dados documentados pelo Evomap exigem OAuth 2.0 com PKCE e escopos aprovados; por isso, a chave de conta registrada no cofre não é usada como substituta de um access token OAuth no catálogo de dados. Uma integração funcional futura dependerá do contrato oficial do gateway correspondente ou de uma autorização OAuth específica com o menor escopo necessário. [5]
 
 ## Referências
 
@@ -25,3 +27,5 @@ O conjunto ativo e validado do JBCx19 é **MiniMax, OpenAI, Llama, Z.AI e Google
 [3] [Alibaba Cloud Model Studio — Obtain an API key](https://www.alibabacloud.com/help/en/model-studio/get-api-key)
 
 [4] [Alibaba Cloud SDK — V3 request structure and signature](https://www.alibabacloud.com/help/en/sdk/product-overview/v3-request-structure-and-signature)
+
+[5] [EvoMap — API Overview](https://evomap.ai/dev/docs/40-api-overview)

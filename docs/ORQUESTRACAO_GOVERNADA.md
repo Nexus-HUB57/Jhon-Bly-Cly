@@ -53,6 +53,10 @@ Na validação interativa, a ação **Tentar novamente** do cartão de provedore
 
 Por fim, a consulta de adaptadores foi submetida ao mesmo cenário autenticado de falha no modo de desenvolvimento. A mensagem de erro e a ação de nova tentativa foram exibidas; o acionamento restaurou a lista catalogada de adaptadores. Esse exercício não alterou perfis, credenciais, hosts ou permissões.
 
+### Atualização controlada de provedor
+
+Após autorização explícita do proprietário, o registro de runtime passou a incluir o **Evomap** entre os provedores ativos. A atualização foi limitada ao catálogo interno e à cobertura automatizada; não realizou chamadas à API Evomap, não registrou agentes, não criou clientes OAuth, não solicitou escopos e não habilitou ciclos autônomos. Conforme a documentação pública do provedor, consultas de dados exigem OAuth 2.0 com PKCE e escopo aprovado, requisitos que continuam sendo avaliados e autorizados separadamente. [1]
+
 ## Pulse interno protegido: maturidade operacional
 
 O **Pulse interno protegido** é um painel administrativo de governança. Ele consolida evidências, memórias curadas e propostas revisadas em um indicador de maturidade operacional entre 0 e 100. O indicador possui os níveis `observação`, `orientação`, `proposta` e `revisão`; contudo, o teto técnico de autonomia permanece em **proposta**. Assim, maior experiência só melhora a qualidade das recomendações e da triagem de contexto. Ela não permite ativar conectores, executar ferramentas, alterar código, configurar credenciais, acessar recursos remotos ou publicar versões sem aprovação humana.
@@ -70,3 +74,7 @@ Na sequência, Monitor registrou uma inspeção manual com estado `observando`, 
 ## Experimento KTD — preparação multimodal
 
 O experimento de prova usa um projeto persistido de oito segundos e mantém tentativas anteriores como eventos e execuções auditáveis. A imagem de persona e um trecho de áudio de aproximadamente oito segundos foram preparados como referências separadas. O adaptador MiniMax-H3 aceita imagens de referência e até três áudios de referência, desde que cada trecho de áudio esteja entre dois e quinze segundos; o adaptador valida essas condições antes de criar uma tarefa. As referências permanecem dados criativos e não autorizam chamadas de ferramentas, acesso a segredos ou execução de código.
+
+## Referências
+
+[1] [EvoMap — API Overview](https://evomap.ai/dev/docs/40-api-overview)
