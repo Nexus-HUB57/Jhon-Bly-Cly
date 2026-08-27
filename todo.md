@@ -140,3 +140,5 @@
 - [x] Reconciliar os sete provedores de API ativos declarados pelo proprietário com o catálogo de runtime, documentando capacidade, contrato e condição de fallback sem inspecionar chaves.
 - [x] Classificar os sete provedores por capacidade de planejamento, referência ou mídia e restringir a elegibilidade de fallback a propostas auditáveis sem execução automática.
 - [x] Exibir a matriz reconciliada de provedores no painel de orquestração, separando sincronização declarada, elegibilidade condicional e disponibilidade de saldo não confirmada.
+- [x] Verificar a disponibilidade atual do Studio privado e diferenciar registros históricos de erros ativos sem ler logs de rede ou segredos.
+- [x] Documentar a indisponibilidade intencional do domínio público e manter publicação e Heartbeat bloqueados até nova autorização explícita.
