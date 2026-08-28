@@ -149,3 +149,16 @@
 - [x] Documentar que Ollama é gratuito apenas como runtime local do proprietário e requer host/processo próprio; o JBC não o instala nem o inicia automaticamente.
 - [x] Corrigir o erro ativo `PRODUCTION_PACKAGE_STATUSES is not defined` no fluxo/painel de pacote de produção sem alterar estados de vídeo ou dados históricos.
 - [x] Reexecutar smoke test autenticado das rotas afetadas e registrar evidência atualizada de ausência de erros ativos antes de concluir o item amplo de disponibilidade.
+
+
+## Atualização complementar — blueprint de bind seguro
+
+- [x] Blueprint de cinco núcleos para ingestão, orçamento, política, bind governado e auditoria sincronizado.
+- [x] Referências públicas de `gpt4free` e `system_prompts_leaks` registradas sem execução, harvesting, bypass ou incorporação de prompts expostos.
+- [x] Painel declarativo e cobertura Vitest de contratos de não execução validados.
+- [x] Commit aditivo `75eeff4` publicado na branch `main`, preservando histórico e arquivos existentes.
+- [ ] Pendências externas permanecem condicionadas a saldo MiniMax, contrato OAuth/PKCE do Evomap, publicação autorizada e Heartbeat; nenhuma ação externa foi iniciada automaticamente.
+
+### Registro de atualização
+
+A atualização acima é complementar: não substitui nem remove itens históricos do checklist remoto.
