@@ -162,3 +162,9 @@
 ### Registro de atualização
 
 A atualização acima é complementar: não substitui nem remove itens históricos do checklist remoto.
+
+## Atualização complementar — tentativa KTD governada
+
+- [x] Registrar a tentativa única bloqueada pelo estado `rascunho`, sem chamada externa, cobrança ou exposição de credenciais.
+- [x] Documentar que o 9router encontrou apenas `MiniMax-AI/MiniMax-MCP` como candidato de mídia, sem executar repositórios de terceiros.
+- [ ] Planejar e revisar o projeto antes de qualquer nova tentativa server-side de geração.
