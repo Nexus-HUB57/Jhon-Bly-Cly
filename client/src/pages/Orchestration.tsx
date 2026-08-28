@@ -7,6 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Activity, BrainCircuit, CirclePause, Coins, Play, ShieldCheck, Sparkles, Webhook, Workflow } from "lucide-react";
 import { TOKEN_QUOTA_PROFILES } from "@shared/tokenQuotaPolicy";
+import { BIND_BLUEPRINT } from "@shared/bindBlueprint";
 import { useMemo, useState } from "react";
 
 function formatDate(value: Date | string | null | undefined) {
@@ -242,6 +243,10 @@ export default function Orchestration() {
 
         <section>
           <Card className="glass-panel border-emerald-200/80"><CardHeader><CardTitle className="flex items-center gap-2"><Coins className="h-5 w-5 text-emerald-700" /> Processamento de tokens</CardTitle><CardDescription>As sete APIs sincronizadas e o Ollama local usam esta matriz declarativa. A cota diária real permanece desconhecida até uma resposta autorizada do provedor.</CardDescription></CardHeader><CardContent className="space-y-3"><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">{TOKEN_QUOTA_PROFILES.map(profile => <div key={profile.providerId} className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3"><div className="flex items-start justify-between gap-2"><p className="text-sm font-semibold">{profile.label}</p><Badge variant="secondary">{profile.mode === "local-sem-cota-de-provedor" ? "local" : profile.mode === "cota-diaria-declarada" ? "declarada" : "desconhecida"}</Badge></div><p className="mt-1 text-xs text-muted-foreground">Até {profile.perRequestTokenLimit.toLocaleString("pt-BR")} tokens por requisição · reset {"UTC"}</p><p className="mt-2 text-xs text-muted-foreground">{profile.note}</p></div>)}</div><p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"><strong>Governança:</strong> o orçamento não roteia, alterna, cobra ou chama provedores. Quando um limite é atingido, o JBC registra uma proposta 9router e aguarda aprovação humana.</p></CardContent></Card>
+        </section>
+
+        <section>
+          <Card className="glass-panel border-sky-200/80"><CardHeader><CardTitle className="flex items-center gap-2"><Workflow className="h-5 w-5 text-sky-700" /> Núcleos de bind</CardTitle><CardDescription>Blueprint desfragmentado para tokenização, orçamento, política, 9router e auditoria. Cada camada permanece declarativa e não inicia processamento externo.</CardDescription></CardHeader><CardContent><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">{BIND_BLUEPRINT.map(layer => <div key={layer.id} className="rounded-xl border border-sky-100 bg-sky-50/40 p-3"><div className="flex items-start justify-between gap-2"><p className="text-sm font-semibold">{layer.label}</p><Badge variant="secondary">{layer.execution.replace("somente-", "")}</Badge></div><p className="mt-2 text-xs text-muted-foreground">{layer.responsibility}</p><p className="mt-2 text-[11px] text-muted-foreground">{layer.input} → {layer.output}</p></div>)}</div><p className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-xs text-sky-900"><strong>Bind seguro:</strong> nenhuma camada cria saldo, usa credencial, troca provedor ou executa agente. A saída é uma proposta revisável.</p></CardContent></Card>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
