@@ -6,6 +6,7 @@ import { fusionRouter } from "./routers/fusion";
 import { orchestrationRouter } from "./routers/orchestration";
 import { referencesRouter } from "./routers/references";
 import { videoRouter } from "./routers/video";
+import { autonomousRouter } from "./routers/autonomous";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -24,6 +25,8 @@ export const appRouter = router({
   orchestration: orchestrationRouter,
   references: referencesRouter,
   video: videoRouter,
+  /** Sistema Autônomo myvideos — modelos nativos, agentes AI, pipeline autônomo */
+  autonomous: autonomousRouter,
 });
 
 export type AppRouter = typeof appRouter;

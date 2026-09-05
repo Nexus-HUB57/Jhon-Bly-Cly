@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import Orchestration from "./pages/Orchestration";
 import References from "./pages/References";
 import ProjectWorkspace from "./pages/ProjectWorkspace";
+import { AutonomousDashboard } from "./pages/AutonomousDashboard";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -20,6 +21,7 @@ function Router() {
       <Route path={"/fusion"}><DashboardLayout><EcosystemFusion /></DashboardLayout></Route>
       <Route path={"/references"}><DashboardLayout><References /></DashboardLayout></Route>
       <Route path={"/projects/:id"}><DashboardLayout><ProjectWorkspace /></DashboardLayout></Route>
+      <Route path={"/autonomous"}><DashboardLayout><AutonomousDashboard /></DashboardLayout></Route>
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
