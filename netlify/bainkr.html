@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>b'AI'nkr — Banco b'AI'tcoin</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root {
+      --bg: #0a0a1a; --bg-card: #111127; --bg-card-hover: #16163a;
+      --border: #1e1e4a; --text: #e2e8f0; --text-muted: #94a3b8;
+      --accent-purple: #7c3aed; --accent-blue: #2563eb;
+      --accent-green: #10b981; --accent-orange: #f59e0b;
+      --accent-pink: #ec4899;
+      --gradient: linear-gradient(135deg, #7c3aed, #2563eb);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+    nav { background: rgba(10,10,26,0.95); border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    .nav-brand { font-size: 1.1rem; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(124,58,237,0.15); }
+    .nav-links a.active { color: var(--accent-purple); }
+    main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .page-header h1 span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .page-header p { color: var(--text-muted); font-size: 0.95rem; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; transition: all 0.3s; }
+    .card:hover { background: var(--bg-card-hover); }
+    .card-title { font-weight: 600; font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .balance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .balance-main { font-size: 2.5rem; font-weight: 700; }
+    .balance-main.purple { color: var(--accent-purple); }
+    .balance-label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .balance-sub { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
+    .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 2rem; }
+    .action-btn { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.3s; text-decoration: none; color: var(--text); display: block; }
+    .action-btn:hover { background: var(--bg-card-hover); border-color: rgba(124,58,237,0.3); transform: translateY(-2px); }
+    .action-btn .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .action-btn .label { font-size: 0.85rem; font-weight: 600; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent-purple); }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.95rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; width: 100%; justify-content: center; }
+    .btn-primary { background: var(--gradient); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.3); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); background: rgba(0,0,0,0.2); }
+    td { padding: 0.75rem 1rem; font-size: 0.9rem; border-top: 1px solid var(--border); }
+    .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .badge-green { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+    .badge-orange { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+    .wallet-addr { background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; padding: 0.75rem 1rem; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem; color: var(--accent-purple); word-break: break-all; margin-bottom: 1rem; cursor: pointer; }
+    @media (max-width: 768px) {
+      .nav-inner { flex-direction: column; align-items: flex-start; }
+      .nav-links { width: 100%; overflow-x: auto; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+    footer { max-width: 1200px; margin: 4rem auto 0; padding: 2rem 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">b'AI'tcoin</a>
+      <div class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="blockchain.html">Blockchain</a>
+        <a href="bainkr.html" class="active">b'AI'nkr</a>
+        <a href="faucet.html">Faucet</a>
+        <a href="fundo.html">Fundo</a>
+        <a href="swap.html">Swap</a>
+        <a href="myvideo.html">myvideos</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <h1>🏦 <span>b'AI'nkr</span></h1>
+      <p>Banco autônomo da rede b'AI'tcoin — Carteira, transferências e gestão de ativos</p>
+    </div>
+
+    <div class="wallet-addr" onclick="copyAddress()" title="Clique para copiar">
+      📋 bAI:0x7c3aed2563eb10b981f59e0bec4899a... <span style="color:var(--text-muted);font-size:0.75rem;">(clique para copiar)</span>
+    </div>
+
+    <div class="balance-grid">
+      <div class="card">
+        <div class="balance-label">Saldo Total</div>
+        <div class="balance-main purple">₿AI 12,584.37</div>
+        <div class="balance-sub">≈ USD 125,843.70</div>
+      </div>
+      <div class="card">
+        <div class="balance-label">Disponível</div>
+        <div class="balance-main" style="color:var(--accent-green);">₿AI 8,421.12</div>
+        <div class="balance-sub">Para transações</div>
+      </div>
+      <div class="card">
+        <div class="balance-label">Em Stake</div>
+        <div class="balance-main" style="color:var(--accent-blue);">₿AI 4,163.25</div>
+        <div class="balance-sub">Validando blocos</div>
+      </div>
+    </div>
+
+    <div class="action-grid">
+      <a href="#" class="action-btn" onclick="showPanel('send');return false;">
+        <div class="icon">📤</div>
+        <div class="label">Enviar</div>
+      </a>
+      <a href="#" class="action-btn" onclick="showPanel('receive');return false;">
+        <div class="icon">📥</div>
+        <div class="label">Receber</div>
+      </a>
+      <a href="#" class="action-btn" onclick="showPanel('stake');return false;">
+        <div class="icon">🔒</div>
+        <div class="label">Stake</div>
+      </a>
+      <a href="swap.html" class="action-btn">
+        <div class="icon">🔄</div>
+        <div class="label">Swap</div>
+      </a>
+      <a href="faucet.html" class="action-btn">
+        <div class="icon">🚰</div>
+        <div class="label">Faucet</div>
+      </a>
+      <a href="#" class="action-btn" onclick="showPanel('history');return false;">
+        <div class="icon">📊</div>
+        <div class="label">Histórico</div>
+      </a>
+    </div>
+
+    <div id="panelSend" class="two-col" style="display:none;">
+      <div class="card">
+        <div class="card-title">📤 Enviar b'AI'tcoin</div>
+        <div class="form-group">
+          <label>Endereço Destino</label>
+          <input type="text" placeholder="bAI:0x... ou alias do agente">
+        </div>
+        <div class="form-group">
+          <label>Valor (₿AI)</label>
+          <input type="number" placeholder="0.00" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Nota (opcional)</label>
+          <input type="text" placeholder="Pagamento por serviço...">
+        </div>
+        <button class="btn btn-primary" onclick="alert('Transação enviada! (demonstração)')">Enviar Transação</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🔒 Stake de Validação</div>
+        <div class="form-group">
+          <label>Valor para Stake (₿AI)</label>
+          <input type="number" placeholder="0.00" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Nó Validador</label>
+          <select>
+            <option>AI-Node-Alpha (99.97% uptime)</option>
+            <option>AI-Node-Beta (99.95% uptime)</option>
+            <option>AI-Node-Gamma (99.92% uptime)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Duração do Lock</label>
+          <select>
+            <option>30 dias (APY 8.2%)</option>
+            <option>90 dias (APY 12.5%)</option>
+            <option>365 dias (APY 18.7%)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="alert('Stake realizado! (demonstração)')">Iniciar Stake</button>
+      </div>
+    </div>
+
+    <div id="panelHistory" style="display:none;">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);font-weight:600;">📊 Histórico de Transações</div>
+        <table>
+          <thead><tr><th>Data</th><th>Tipo</th><th>De/Para</th><th>Valor</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>2025-03-04 14:23</td><td>Recebido</td><td class="mono">AI-Agent-42</td><td style="color:var(--accent-green);">+₿AI 125.40</td><td><span class="badge badge-green">Confirmado</span></td></tr>
+            <tr><td>2025-03-04 12:07</td><td>Enviado</td><td class="mono">Fundo-Dev</td><td style="color:var(--accent-orange);">-₿AI 50.00</td><td><span class="badge badge-green">Confirmado</span></td></tr>
+            <tr><td>2025-03-04 09:41</td><td>Stake</td><td class="mono">AI-Node-Alpha</td><td style="color:var(--accent-blue);">-₿AI 1,000.00</td><td><span class="badge badge-green">Ativo</span></td></tr>
+            <tr><td>2025-03-03 22:15</td><td>Swap</td><td class="mono">Swap-Pool</td><td style="color:var(--accent-green);">+₿AI 45.20</td><td><span class="badge badge-green">Confirmado</span></td></tr>
+            <tr><td>2025-03-03 18:30</td><td>Faucet</td><td class="mono">Faucet</td><td style="color:var(--accent-green);">+₿AI 10.00</td><td><span class="badge badge-green">Confirmado</span></td></tr>
+            <tr><td>2025-03-03 15:02</td><td>Recompensa</td><td class="mono">Staking-Reward</td><td style="color:var(--accent-green);">+₿AI 3.71</td><td><span class="badge badge-green">Confirmado</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>b'AI'nkr — Banco Autônomo b'AI'tcoin © 2025</p>
+  </footer>
+
+  <script>
+    function copyAddress() {
+      navigator.clipboard.writeText('bAI:0x7c3aed2563eb10b981f59e0bec4899a').then(function() {
+        alert('Endereço copiado!');
+      });
+    }
+    function showPanel(panel) {
+      document.getElementById('panelSend').style.display = 'none';
+      document.getElementById('panelHistory').style.display = 'none';
+      if (panel === 'send' || panel === 'receive' || panel === 'stake') {
+        document.getElementById('panelSend').style.display = 'grid';
+      } else if (panel === 'history') {
+        document.getElementById('panelHistory').style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>

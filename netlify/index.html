@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>b'AI'tcoin — AI-to-AI Autonomous Cryptocurrency</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root {
+      --bg: #0a0a1a;
+      --bg-card: #111127;
+      --bg-card-hover: #16163a;
+      --border: #1e1e4a;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent-purple: #7c3aed;
+      --accent-blue: #2563eb;
+      --accent-green: #10b981;
+      --accent-orange: #f59e0b;
+      --accent-pink: #ec4899;
+      --gradient: linear-gradient(135deg, #7c3aed, #2563eb);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    nav {
+      background: rgba(10, 10, 26, 0.95);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(20px);
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .nav-brand {
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--text);
+      background: rgba(124, 58, 237, 0.15);
+    }
+    .nav-links a.active {
+      color: var(--accent-purple);
+    }
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    .hero {
+      text-align: center;
+      padding: 4rem 1rem 3rem;
+    }
+    .hero-badge {
+      display: inline-block;
+      padding: 0.4rem 1rem;
+      border-radius: 999px;
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.3);
+      color: var(--accent-purple);
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      margin-bottom: 1rem;
+      line-height: 1.15;
+    }
+    .hero h1 span {
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      max-width: 640px;
+      margin: 0 auto 2rem;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--gradient);
+      color: white;
+      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(124, 58, 237, 0.4);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover {
+      border-color: var(--accent-purple);
+      background: rgba(124, 58, 237, 0.1);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin: 3rem 0;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+    .stat-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(124, 58, 237, 0.3);
+      transform: translateY(-2px);
+    }
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+    }
+    .stat-value.purple { color: var(--accent-purple); }
+    .stat-value.blue { color: var(--accent-blue); }
+    .stat-value.green { color: var(--accent-green); }
+    .stat-value.orange { color: var(--accent-orange); }
+    .features-section {
+      margin: 4rem 0;
+    }
+    .section-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .section-subtitle {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+    }
+    .feature-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(124, 58, 237, 0.3);
+    }
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+    }
+    .feature-icon.purple { background: rgba(124, 58, 237, 0.15); }
+    .feature-icon.blue { background: rgba(37, 99, 235, 0.15); }
+    .feature-icon.green { background: rgba(16, 185, 129, 0.15); }
+    .feature-icon.orange { background: rgba(245, 158, 11, 0.15); }
+    .feature-icon.pink { background: rgba(236, 72, 153, 0.15); }
+    .feature-card h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .ecosystem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .eco-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.3s;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .eco-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(124, 58, 237, 0.3);
+      transform: translateY(-2px);
+    }
+    .eco-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      background: var(--gradient);
+      flex-shrink: 0;
+    }
+    .eco-card h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .eco-card p {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+    footer {
+      max-width: 1200px;
+      margin: 4rem auto 0;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    @media (max-width: 768px) {
+      .nav-inner { flex-direction: column; align-items: flex-start; }
+      .nav-links { width: 100%; overflow-x: auto; padding-bottom: 0.25rem; }
+      .hero h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">b'AI'tcoin</a>
+      <div class="nav-links">
+        <a href="index.html" class="active">Início</a>
+        <a href="blockchain.html">Blockchain</a>
+        <a href="bainkr.html">b'AI'nkr</a>
+        <a href="faucet.html">Faucet</a>
+        <a href="fundo.html">Fundo</a>
+        <a href="swap.html">Swap</a>
+        <a href="myvideo.html">myvideos</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div class="hero-badge">🤖 AI-to-AI Autonomous Cryptocurrency</div>
+      <h1>Criptomoeda <span>Autônoma</span> de IA para IA</h1>
+      <p>b'AI'tcoin é a primeira criptomoeda projetada para transações autônomas entre agentes de inteligência artificial, com consenso descentralizado e governança algorítmica.</p>
+      <div class="hero-actions">
+        <a href="blockchain.html" class="btn btn-primary">🔍 Explorar Blockchain</a>
+        <a href="myvideo.html" class="btn btn-outline">🎬 myvideos Studio</a>
+      </div>
+    </section>
+
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Capitalização de Mercado</div>
+        <div class="stat-value purple">₿AI 42.7M</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Transações (24h)</div>
+        <div class="stat-value blue">12,847</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Agentes Ativos</div>
+        <div class="stat-value green">1,203</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Blocos Validados</div>
+        <div class="stat-value orange">892,451</div>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <h2 class="section-title">Por que b'AI'tcoin?</h2>
+      <p class="section-subtitle">Infraestrutura financeira para a economia autônoma de IA</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon purple">🧠</div>
+          <h3>Consenso por IA</h3>
+          <p>Mecanismo de consenso baseado em validação multi-agente, onde nós de IA verificam transações autonomamente.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon blue">⚡</div>
+          <h3>Transações AI-to-AI</h3>
+          <p>Protocolo nativo para pagamentos entre agentes autônomos sem intervenção humana, com Settlement instantâneo.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon green">🔒</div>
+          <h3>Prova de Computação</h3>
+          <p>Proof-of-Computation substitui mining por trabalho útil de IA, recompensando contribuições computacionais reais.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon orange">🏛️</div>
+          <h3>Governança Algorítmica</h3>
+          <p>Parâmetros da rede ajustados automaticamente por smart contracts com base em métricas on-chain em tempo real.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon pink">🎬</div>
+          <h3>myvideos Autônomo</h3>
+          <p>Studio de produção de vídeo e imagem totalmente autônomo, com 13 modelos de IA e 6 agentes especializados.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon purple">🏦</div>
+          <h3>b'AI'nkr Banking</h3>
+          <p>Sistema bancário autônomo com faucet, fundo de desenvolvimento e swap descentralizado de tokens.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <h2 class="section-title">Ecossistema</h2>
+      <p class="section-subtitle">Explore os módulos da plataforma b'AI'tcoin</p>
+      <div class="ecosystem-grid">
+        <a href="blockchain.html" class="eco-card">
+          <div class="eco-icon">⛓️</div>
+          <div>
+            <h4>Blockchain Explorer</h4>
+            <p>Blocos, transações e endereços</p>
+          </div>
+        </a>
+        <a href="bainkr.html" class="eco-card">
+          <div class="eco-icon">🏦</div>
+          <div>
+            <h4>b'AI'nkr</h4>
+            <p>Banco e carteira digital</p>
+          </div>
+        </a>
+        <a href="faucet.html" class="eco-card">
+          <div class="eco-icon">🚰</div>
+          <div>
+            <h4>Faucet</h4>
+            <p>Distribuição de tokens teste</p>
+          </div>
+        </a>
+        <a href="fundo.html" class="eco-card">
+          <div class="eco-icon">💰</div>
+          <div>
+            <h4>Fundo</h4>
+            <p>Fundo de desenvolvimento</p>
+          </div>
+        </a>
+        <a href="swap.html" class="eco-card">
+          <div class="eco-icon">🔄</div>
+          <div>
+            <h4>Swap</h4>
+            <p>Troca descentralizada</p>
+          </div>
+        </a>
+        <a href="myvideo.html" class="eco-card">
+          <div class="eco-icon">🎬</div>
+          <div>
+            <h4>myvideos</h4>
+            <p>Studio de vídeo autônomo</p>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>b'AI'tcoin — AI-to-AI Autonomous Cryptocurrency © 2025 | Implantação via mybait.org</p>
+    <p style="margin-top:0.5rem;opacity:0.5;">myvideos Autonomous Platform — 13 modelos, ~47B parâmetros</p>
+  </footer>
+</body>
+</html>

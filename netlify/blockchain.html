@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockchain Explorer — b'AI'tcoin</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root {
+      --bg: #0a0a1a; --bg-card: #111127; --bg-card-hover: #16163a;
+      --border: #1e1e4a; --text: #e2e8f0; --text-muted: #94a3b8;
+      --accent-purple: #7c3aed; --accent-blue: #2563eb;
+      --accent-green: #10b981; --accent-orange: #f59e0b;
+      --gradient: linear-gradient(135deg, #7c3aed, #2563eb);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+    nav { background: rgba(10,10,26,0.95); border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    .nav-brand { font-size: 1.1rem; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(124,58,237,0.15); }
+    .nav-links a.active { color: var(--accent-purple); }
+    main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .page-header h1 span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .page-header p { color: var(--text-muted); font-size: 0.95rem; }
+    .search-bar { display: flex; gap: 0.75rem; margin-bottom: 2rem; }
+    .search-bar input { flex: 1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1rem; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+    .search-bar input:focus { border-color: var(--accent-purple); }
+    .search-bar input::placeholder { color: var(--text-muted); }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.95rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: var(--gradient); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.3); }
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; transition: all 0.3s; }
+    .stat-card:hover { background: var(--bg-card-hover); }
+    .stat-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; }
+    .stat-value.purple { color: var(--accent-purple); }
+    .stat-value.blue { color: var(--accent-blue); }
+    .stat-value.green { color: var(--accent-green); }
+    .stat-value.orange { color: var(--accent-orange); }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; }
+    .card-body { padding: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 0.75rem 1.25rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); background: rgba(0,0,0,0.2); }
+    td { padding: 0.75rem 1.25rem; font-size: 0.9rem; border-top: 1px solid var(--border); }
+    td.mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; color: var(--accent-blue); }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .badge-green { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+    .badge-purple { background: rgba(124,58,237,0.15); color: var(--accent-purple); }
+    .badge-orange { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+    @media (max-width: 768px) {
+      .nav-inner { flex-direction: column; align-items: flex-start; }
+      .nav-links { width: 100%; overflow-x: auto; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+    footer { max-width: 1200px; margin: 4rem auto 0; padding: 2rem 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">b'AI'tcoin</a>
+      <div class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="blockchain.html" class="active">Blockchain</a>
+        <a href="bainkr.html">b'AI'nkr</a>
+        <a href="faucet.html">Faucet</a>
+        <a href="fundo.html">Fundo</a>
+        <a href="swap.html">Swap</a>
+        <a href="myvideo.html">myvideos</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <h1>Blockchain <span>Explorer</span></h1>
+      <p>Explore blocos, transações e endereços da rede b'AI'tcoin</p>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" placeholder="Buscar por hash do bloco, transação ou endereço..." id="searchInput">
+      <button class="btn btn-primary" onclick="handleSearch()">🔍 Buscar</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Altura Atual</div>
+        <div class="stat-value purple" id="blockHeight">892,451</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Transações Hoje</div>
+        <div class="stat-value blue">12,847</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TPS Atual</div>
+        <div class="stat-value green">847</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Validadores</div>
+        <div class="stat-value orange">256</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header">
+          <span>⛓️ Blocos Recentes</span>
+          <span style="color:var(--text-muted);font-size:0.8rem;">Últimos 5</span>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead><tr><th>Bloco</th><th>Hash</th><th>Txns</th><th>Validador</th><th>Tempo</th></tr></thead>
+            <tbody id="blocksTable">
+              <tr><td class="mono">#892451</td><td class="mono">0x7a3f...e2d1</td><td>23</td><td><span class="badge badge-green">AI-Node</span></td><td>2s atrás</td></tr>
+              <tr><td class="mono">#892450</td><td class="mono">0x9b1c...a4f7</td><td>18</td><td><span class="badge badge-green">AI-Node</span></td><td>5s atrás</td></tr>
+              <tr><td class="mono">#892449</td><td class="mono">0x2d8e...c6b3</td><td>31</td><td><span class="badge badge-purple">Human</span></td><td>8s atrás</td></tr>
+              <tr><td class="mono">#892448</td><td class="mono">0xf4a7...8e9c</td><td>12</td><td><span class="badge badge-green">AI-Node</span></td><td>11s atrás</td></tr>
+              <tr><td class="mono">#892447</td><td class="mono">0x1c5d...b3a2</td><td>27</td><td><span class="badge badge-green">AI-Node</span></td><td>14s atrás</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span>💸 Transações Recentes</span>
+          <span style="color:var(--text-muted);font-size:0.8rem;">Últimas 5</span>
+        </div>
+        <div class="card-body">
+          <table>
+            <thead><tr><th>Hash</th><th>De</th><th>Para</th><th>Valor</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">0xaa1f...7e2d</td><td class="mono">AI-Agent-42</td><td class="mono">AI-Agent-17</td><td>₿AI 125.4</td><td><span class="badge badge-green">✓</span></td></tr>
+              <tr><td class="mono">0xbb3c...9f4a</td><td class="mono">AI-Agent-08</td><td class="mono">bAI:nkr</td><td>₿AI 1,000</td><td><span class="badge badge-green">✓</span></td></tr>
+              <tr><td class="mono">0xcc5d...2e8b</td><td class="mono">Faucet</td><td class="mono">AI-Agent-99</td><td>₿AI 10.0</td><td><span class="badge badge-green">✓</span></td></tr>
+              <tr><td class="mono">0xdd7e...1a3c</td><td class="mono">Swap-Pool</td><td class="mono">AI-Agent-33</td><td>₿AI 45.2</td><td><span class="badge badge-orange">⏳</span></td></tr>
+              <tr><td class="mono">0xee9f...4b5d</td><td class="mono">AI-Agent-61</td><td class="mono">Fundo-Dev</td><td>₿AI 50.0</td><td><span class="badge badge-green">✓</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:2rem;">
+      <div class="card-header">
+        <span>🧠 Top Validadores AI</span>
+        <span style="color:var(--text-muted);font-size:0.8rem;">Por stake</span>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead><tr><th>#</th><th>Validador</th><th>Stake</th><th>Blocos</th><th>Uptime</th><th>Recompensa (24h)</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td class="mono">AI-Node-Alpha</td><td>₿AI 50,000</td><td>142,871</td><td>99.97%</td><td>₿AI 125.4</td></tr>
+            <tr><td>2</td><td class="mono">AI-Node-Beta</td><td>₿AI 45,000</td><td>128,453</td><td>99.95%</td><td>₿AI 112.8</td></tr>
+            <tr><td>3</td><td class="mono">AI-Node-Gamma</td><td>₿AI 38,000</td><td>109,217</td><td>99.92%</td><td>₿AI 95.7</td></tr>
+            <tr><td>4</td><td class="mono">AI-Node-Delta</td><td>₿AI 32,000</td><td>91,834</td><td>99.89%</td><td>₿AI 80.1</td></tr>
+            <tr><td>5</td><td class="mono">AI-Node-Epsilon</td><td>₿AI 28,000</td><td>80,612</td><td>99.85%</td><td>₿AI 70.3</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>b'AI'tcoin — AI-to-AI Autonomous Cryptocurrency © 2025 | Blockchain Explorer v1.0</p>
+  </footer>
+
+  <script>
+    let height = 892451;
+    function handleSearch() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) return;
+      alert('Buscando: ' + q + '\n\nEm produção, isso consultaria a API da blockchain.');
+    }
+    document.getElementById('searchInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') handleSearch();
+    });
+    setInterval(function() {
+      height++;
+      document.getElementById('blockHeight').textContent = height.toLocaleString('pt-BR');
+    }, 5000);
+  </script>
+</body>
+</html>

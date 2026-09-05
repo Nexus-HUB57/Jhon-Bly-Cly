@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fundo de Desenvolvimento — b'AI'tcoin</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root {
+      --bg: #0a0a1a; --bg-card: #111127; --bg-card-hover: #16163a;
+      --border: #1e1e4a; --text: #e2e8f0; --text-muted: #94a3b8;
+      --accent-purple: #7c3aed; --accent-blue: #2563eb;
+      --accent-green: #10b981; --accent-orange: #f59e0b;
+      --accent-pink: #ec4899;
+      --gradient: linear-gradient(135deg, #7c3aed, #2563eb);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+    nav { background: rgba(10,10,26,0.95); border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    .nav-brand { font-size: 1.1rem; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(124,58,237,0.15); }
+    .nav-links a.active { color: var(--accent-purple); }
+    main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .page-header h1 span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .page-header p { color: var(--text-muted); font-size: 0.95rem; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; transition: all 0.3s; }
+    .card:hover { background: var(--bg-card-hover); }
+    .card-title { font-weight: 600; font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+    .stat-value { font-size: 1.75rem; font-weight: 700; }
+    .stat-value.purple { color: var(--accent-purple); }
+    .stat-value.blue { color: var(--accent-blue); }
+    .stat-value.green { color: var(--accent-green); }
+    .stat-value.orange { color: var(--accent-orange); }
+    .progress-bar { width: 100%; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin-top: 0.5rem; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+    .allocation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .alloc-item { background: var(--bg); border-radius: 8px; padding: 1rem; }
+    .alloc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .alloc-name { font-weight: 600; font-size: 0.95rem; }
+    .alloc-pct { font-size: 0.85rem; font-weight: 700; }
+    .alloc-amount { color: var(--text-muted); font-size: 0.85rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); background: rgba(0,0,0,0.2); }
+    td { padding: 0.75rem 1rem; font-size: 0.9rem; border-top: 1px solid var(--border); }
+    .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; }
+    .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+    .badge-green { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+    .badge-purple { background: rgba(124,58,237,0.15); color: var(--accent-purple); }
+    .badge-orange { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+    .badge-pink { background: rgba(236,72,153,0.15); color: var(--accent-pink); }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent-purple); }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.95rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: var(--gradient); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.3); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 768px) {
+      .nav-inner { flex-direction: column; align-items: flex-start; }
+      .nav-links { width: 100%; overflow-x: auto; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+    footer { max-width: 1200px; margin: 4rem auto 0; padding: 2rem 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">b'AI'tcoin</a>
+      <div class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="blockchain.html">Blockchain</a>
+        <a href="bainkr.html">b'AI'nkr</a>
+        <a href="faucet.html">Faucet</a>
+        <a href="fundo.html" class="active">Fundo</a>
+        <a href="swap.html">Swap</a>
+        <a href="myvideo.html">myvideos</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <h1>💰 Fundo de <span>Desenvolvimento</span></h1>
+      <p>Financiamento autônomo para projetos do ecossistema b'AI'tcoin</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="card">
+        <div class="stat-label">Saldo Total</div>
+        <div class="stat-value purple">₿AI 2,450,000</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:65%;background:var(--gradient);"></div></div>
+        <div style="color:var(--text-muted);font-size:0.8rem;margin-top:0.3rem;">65% alocado</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Projetos Ativos</div>
+        <div class="stat-value blue">23</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Total Distribuído</div>
+        <div class="stat-value green">₿AI 1,592,500</div>
+      </div>
+      <div class="card">
+        <div class="stat-label">Propostas Pendentes</div>
+        <div class="stat-value orange">7</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Alocação por Categoria</div>
+      <div class="allocation-grid">
+        <div class="alloc-item">
+          <div class="alloc-header">
+            <span class="alloc-name">🤖 IA & Automação</span>
+            <span class="alloc-pct" style="color:var(--accent-purple);">35%</span>
+          </div>
+          <div class="alloc-amount">₿AI 857,500</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:35%;background:var(--accent-purple);"></div></div>
+        </div>
+        <div class="alloc-item">
+          <div class="alloc-header">
+            <span class="alloc-name">⛓️ Infraestrutura</span>
+            <span class="alloc-pct" style="color:var(--accent-blue);">25%</span>
+          </div>
+          <div class="alloc-amount">₿AI 612,500</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:25%;background:var(--accent-blue);"></div></div>
+        </div>
+        <div class="alloc-item">
+          <div class="alloc-header">
+            <span class="alloc-name">🎬 myvideos & Conteúdo</span>
+            <span class="alloc-pct" style="color:var(--accent-green);">20%</span>
+          </div>
+          <div class="alloc-amount">₿AI 490,000</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:20%;background:var(--accent-green);"></div></div>
+        </div>
+        <div class="alloc-item">
+          <div class="alloc-header">
+            <span class="alloc-name">🎓 Educação & Comunidade</span>
+            <span class="alloc-pct" style="color:var(--accent-orange);">12%</span>
+          </div>
+          <div class="alloc-amount">₿AI 294,000</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:12%;background:var(--accent-orange);"></div></div>
+        </div>
+        <div class="alloc-item">
+          <div class="alloc-header">
+            <span class="alloc-name">🔬 Pesquisa</span>
+            <span class="alloc-pct" style="color:var(--accent-pink);">8%</span>
+          </div>
+          <div class="alloc-amount">₿AI 196,000</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:8%;background:var(--accent-pink);"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);font-weight:600;">📝 Projetos Financiados</div>
+      <table>
+        <thead><tr><th>Projeto</th><th>Categoria</th><th>Valor</th><th>Status</th><th>Progresso</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>myvideos Autônomo v2</strong></td>
+            <td><span class="badge badge-green">Conteúdo</span></td>
+            <td>₿AI 180,000</td>
+            <td><span class="badge badge-green">Ativo</span></td>
+            <td>72%</td>
+          </tr>
+          <tr>
+            <td><strong>AI Consensus Engine</strong></td>
+            <td><span class="badge badge-purple">IA</span></td>
+            <td>₿AI 250,000</td>
+            <td><span class="badge badge-green">Ativo</span></td>
+            <td>45%</td>
+          </tr>
+          <tr>
+            <td><strong>b'AI'nkr Mobile</strong></td>
+            <td><span class="badge badge-blue" style="background:rgba(37,99,235,0.15);color:var(--accent-blue);">Infra</span></td>
+            <td>₿AI 95,000</td>
+            <td><span class="badge badge-green">Ativo</span></td>
+            <td>88%</td>
+          </tr>
+          <tr>
+            <td><strong>Proof-of-Computation v3</strong></td>
+            <td><span class="badge badge-purple">IA</span></td>
+            <td>₿AI 300,000</td>
+            <td><span class="badge badge-orange">Revisão</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Swap DEX Protocol</strong></td>
+            <td><span class="badge badge-blue" style="background:rgba(37,99,235,0.15);color:var(--accent-blue);">Infra</span></td>
+            <td>₿AI 120,000</td>
+            <td><span class="badge badge-green">Ativo</span></td>
+            <td>60%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="two-col" style="margin-top:1.5rem;">
+      <div class="card">
+        <div class="card-title">📨 Submeter Proposta</div>
+        <div class="form-group">
+          <label>Nome do Projeto</label>
+          <input type="text" placeholder="Ex: SDK Python b'AI'tcoin">
+        </div>
+        <div class="form-group">
+          <label>Categoria</label>
+          <select>
+            <option>🤖 IA & Automação</option>
+            <option>⛓️ Infraestrutura</option>
+            <option>🎬 myvideos & Conteúdo</option>
+            <option>🎓 Educação & Comunidade</option>
+            <option>🔬 Pesquisa</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Valor Solicitado (₿AI)</label>
+          <input type="number" placeholder="0.00" step="100">
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea rows="3" placeholder="Descreva o projeto, objetivos e entregáveis..." style="resize:vertical;"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="alert('Proposta submetida! (demonstração)')">📨 Submeter</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🗳️ Propostas em Votação</div>
+        <div style="padding:1rem 0;border-bottom:1px solid var(--border);">
+          <div style="font-weight:600;font-size:0.95rem;">Cross-chain Bridge Protocol</div>
+          <div style="color:var(--text-muted);font-size:0.85rem;margin:0.25rem 0;">₿AI 200,000 · Infraestrutura</div>
+          <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+            <span style="color:var(--accent-green);">👍 67%</span>
+            <span style="color:var(--accent-orange);">👎 33%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:67%;background:var(--accent-green);"></div></div>
+        </div>
+        <div style="padding:1rem 0;border-bottom:1px solid var(--border);">
+          <div style="font-weight:600;font-size:0.95rem;">Agent Marketplace</div>
+          <div style="color:var(--text-muted);font-size:0.85rem;margin:0.25rem 0;">₿AI 150,000 · IA & Automação</div>
+          <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+            <span style="color:var(--accent-green);">👍 82%</span>
+            <span style="color:var(--accent-orange);">👎 18%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:82%;background:var(--accent-green);"></div></div>
+        </div>
+        <div style="padding:1rem 0;">
+          <div style="font-weight:600;font-size:0.95rem;">Documentation Hub</div>
+          <div style="color:var(--text-muted);font-size:0.85rem;margin:0.25rem 0;">₿AI 45,000 · Educação</div>
+          <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+            <span style="color:var(--accent-green);">👍 91%</span>
+            <span style="color:var(--accent-orange);">👎 9%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:91%;background:var(--accent-green);"></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>Fundo de Desenvolvimento b'AI'tcoin © 2025 — Governança Autônoma</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faucet — b'AI'tcoin</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root {
+      --bg: #0a0a1a; --bg-card: #111127; --bg-card-hover: #16163a;
+      --border: #1e1e4a; --text: #e2e8f0; --text-muted: #94a3b8;
+      --accent-purple: #7c3aed; --accent-blue: #2563eb;
+      --accent-green: #10b981; --accent-orange: #f59e0b;
+      --gradient: linear-gradient(135deg, #7c3aed, #2563eb);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+    nav { background: rgba(10,10,26,0.95); border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    .nav-brand { font-size: 1.1rem; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(124,58,237,0.15); }
+    .nav-links a.active { color: var(--accent-purple); }
+    main { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .page-header { margin-bottom: 2rem; text-align: center; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .page-header h1 span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .page-header p { color: var(--text-muted); font-size: 0.95rem; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; transition: all 0.3s; }
+    .card:hover { background: var(--bg-card-hover); }
+    .card-title { font-weight: 600; font-size: 1rem; margin-bottom: 1rem; }
+    .faucet-amount { text-align: center; padding: 1.5rem 0; }
+    .faucet-amount .value { font-size: 3rem; font-weight: 700; color: var(--accent-purple); }
+    .faucet-amount .label { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .form-group input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+    .form-group input:focus { border-color: var(--accent-purple); }
+    .form-group input::placeholder { color: var(--text-muted); }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.95rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; width: 100%; justify-content: center; }
+    .btn-primary { background: var(--gradient); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.3); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .cooldown-bar { width: 100%; height: 6px; background: var(--bg); border-radius: 3px; margin-top: 1rem; overflow: hidden; }
+    .cooldown-fill { height: 100%; background: var(--gradient); border-radius: 3px; transition: width 1s linear; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .info-item { background: var(--bg); border-radius: 8px; padding: 0.75rem; text-align: center; }
+    .info-item .val { font-weight: 700; font-size: 1.1rem; }
+    .info-item .lbl { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .log-entry { padding: 0.75rem 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    .log-entry:last-child { border-bottom: none; }
+    .log-addr { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; color: var(--accent-blue); }
+    .log-time { color: var(--text-muted); font-size: 0.8rem; }
+    .result-box { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 1rem; margin-top: 1rem; display: none; }
+    .result-box.show { display: block; }
+    .result-box .tx-hash { font-family: 'SF Mono', 'Fira Code', monospace; color: var(--accent-green); word-break: break-all; font-size: 0.85rem; }
+    @media (max-width: 768px) {
+      .nav-inner { flex-direction: column; align-items: flex-start; }
+      .nav-links { width: 100%; overflow-x: auto; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+    footer { max-width: 1200px; margin: 4rem auto 0; padding: 2rem 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">b'AI'tcoin</a>
+      <div class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="blockchain.html">Blockchain</a>
+        <a href="bainkr.html">b'AI'nkr</a>
+        <a href="faucet.html" class="active">Faucet</a>
+        <a href="fundo.html">Fundo</a>
+        <a href="swap.html">Swap</a>
+        <a href="myvideo.html">myvideos</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <h1>🚰 <span>Faucet</span> b'AI'tcoin</h1>
+      <p>Receba tokens de teste para experimentar a rede b'AI'tcoin</p>
+    </div>
+
+    <div class="card">
+      <div class="faucet-amount">
+        <div class="value">₿AI 10.00</div>
+        <div class="label">por solicitação (rede de teste)</div>
+      </div>
+
+      <div class="info-grid" style="margin-bottom:1.5rem;">
+        <div class="info-item">
+          <div class="val" style="color:var(--accent-green);">₿AI 1,247,830</div>
+          <div class="lbl">Disponível no Faucet</div>
+        </div>
+        <div class="info-item">
+          <div class="val" style="color:var(--accent-orange);">24h</div>
+          <div class="lbl">Cooldown por endereço</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Endereço b'AI'tcoin</label>
+        <input type="text" id="faucetAddr" placeholder="bAI:0x... ou alias do agente AI">
+      </div>
+
+      <button class="btn btn-primary" id="claimBtn" onclick="claimFaucet()">🚰 Solicitar Tokens</button>
+
+      <div class="cooldown-bar" id="cooldownBar" style="display:none;">
+        <div class="cooldown-fill" id="cooldownFill" style="width:100%;"></div>
+      </div>
+
+      <div class="result-box" id="resultBox">
+        <div style="font-weight:600;margin-bottom:0.5rem;">✅ Tokens enviados!</div>
+        <div style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.25rem;">Hash da transação:</div>
+        <div class="tx-hash" id="txHash"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Distribuições Recentes</div>
+      <div class="log-entry">
+        <span class="log-addr">bAI:0x7a3f...e2d1</span>
+        <span>₿AI 10.00</span>
+        <span class="log-time">há 2 min</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-addr">AI-Agent-42</span>
+        <span>₿AI 10.00</span>
+        <span class="log-time">há 5 min</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-addr">bAI:0x9b1c...a4f7</span>
+        <span>₿AI 10.00</span>
+        <span class="log-time">há 8 min</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-addr">AI-Agent-17</span>
+        <span>₿AI 10.00</span>
+        <span class="log-time">há 12 min</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-addr">bAI:0x2d8e...c6b3</span>
+        <span>₿AI 10.00</span>
+        <span class="log-time">há 15 min</span>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:rgba(245,158,11,0.3);">
+      <div class="card-title" style="color:var(--accent-orange);">⚠️ Informações</div>
+      <ul style="color:var(--text-muted);font-size:0.9rem;padding-left:1.25rem;line-height:2;">
+        <li>Este faucet distribui tokens na <strong style="color:var(--text);">rede de teste</strong> apenas</li>
+        <li>Limite de <strong style="color:var(--text);">1 solicitação por endereço a cada 24 horas</strong></li>
+        <li>Agentes AI podem solicitar automaticamente via API</li>
+        <li>Tokens de teste não têm valor financeiro</li>
+        <li>Para tokens mainnet, utilize o <a href="swap.html" style="color:var(--accent-purple);">Swap</a></li>
+      </ul>
+    </div>
+  </main>
+
+  <footer>
+    <p>b'AI'tcoin Faucet © 2025 — Rede de Teste</p>
+  </footer>
+
+  <script>
+    let cooldown = false;
+    function claimFaucet() {
+      const addr = document.getElementById('faucetAddr').value.trim();
+      if (!addr) { alert('Por favor, insira um endereço b\'AI\'tcoin.'); return; }
+      if (cooldown) { alert('Aguarde o cooldown antes de solicitar novamente.'); return; }
+
+      const btn = document.getElementById('claimBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Processando...';
+
+      setTimeout(function() {
+        const hash = '0x' + Array.from({length: 64}, function() { return Math.floor(Math.random()*16).toString(16); }).join('');
+        document.getElementById('txHash').textContent = hash;
+        document.getElementById('resultBox').classList.add('show');
+        btn.textContent = '✅ Solicitado! Aguarde 24h';
+        cooldown = true;
+
+        const bar = document.getElementById('cooldownBar');
+        bar.style.display = 'block';
+        let pct = 100;
+        const interval = setInterval(function() {
+          pct -= 0.5;
+          document.getElementById('cooldownFill').style.width = pct + '%';
+          if (pct <= 0) {
+            clearInterval(interval);
+            cooldown = false;
+            btn.disabled = false;
+            btn.textContent = '🚰 Solicitar Tokens';
+            bar.style.display = 'none';
+          }
+        }, 50);
+      }, 2000);
+    }
+  </script>
+</body>
+</html>

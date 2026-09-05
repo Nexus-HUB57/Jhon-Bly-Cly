@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swap — b'AI'tcoin DEX</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root {
+      --bg: #0a0a1a; --bg-card: #111127; --bg-card-hover: #16163a;
+      --border: #1e1e4a; --text: #e2e8f0; --text-muted: #94a3b8;
+      --accent-purple: #7c3aed; --accent-blue: #2563eb;
+      --accent-green: #10b981; --accent-orange: #f59e0b;
+      --gradient: linear-gradient(135deg, #7c3aed, #2563eb);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+    nav { background: rgba(10,10,26,0.95); border-bottom: 1px solid var(--border); padding: 0.75rem 1.5rem; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(20px); }
+    .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    .nav-brand { font-size: 1.1rem; font-weight: 700; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none; }
+    .nav-links { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.85rem; transition: all 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(124,58,237,0.15); }
+    .nav-links a.active { color: var(--accent-purple); }
+    main { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .page-header { margin-bottom: 2rem; text-align: center; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .page-header h1 span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .page-header p { color: var(--text-muted); font-size: 0.95rem; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; transition: all 0.3s; }
+    .card:hover { background: var(--bg-card-hover); }
+    .swap-container { max-width: 480px; margin: 0 auto 2rem; }
+    .token-input { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 0.5rem; }
+    .token-input-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .token-label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .token-balance { color: var(--text-muted); font-size: 0.85rem; cursor: pointer; }
+    .token-balance:hover { color: var(--text); }
+    .token-input-row { display: flex; gap: 0.75rem; align-items: center; }
+    .token-input-row input { flex: 1; background: transparent; border: none; color: var(--text); font-size: 1.5rem; font-weight: 600; outline: none; }
+    .token-input-row input::placeholder { color: rgba(148,163,184,0.4); }
+    .token-select { background: var(--bg-card-hover); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.75rem; color: var(--text); font-size: 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap; outline: none; }
+    .swap-arrow { text-align: center; margin: 0.5rem 0; }
+    .swap-arrow button { background: var(--bg-card); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 50%; color: var(--accent-purple); font-size: 1.1rem; cursor: pointer; transition: all 0.2s; }
+    .swap-arrow button:hover { background: var(--bg-card-hover); border-color: var(--accent-purple); transform: rotate(180deg); }
+    .swap-details { background: var(--bg); border-radius: 8px; padding: 0.75rem 1rem; margin-top: 1rem; }
+    .swap-detail-row { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.85rem; }
+    .swap-detail-row .label { color: var(--text-muted); }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.95rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; width: 100%; justify-content: center; margin-top: 1rem; }
+    .btn-primary { background: var(--gradient); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(124,58,237,0.3); }
+    .pools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .pool-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; transition: all 0.3s; }
+    .pool-card:hover { background: var(--bg-card-hover); }
+    .pool-pair { font-weight: 600; font-size: 1rem; margin-bottom: 0.75rem; }
+    .pool-stat { display: flex; justify-content: space-between; padding: 0.2rem 0; font-size: 0.85rem; }
+    .pool-stat .label { color: var(--text-muted); }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); background: rgba(0,0,0,0.2); }
+    td { padding: 0.75rem 1rem; font-size: 0.9rem; border-top: 1px solid var(--border); }
+    .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; }
+    @media (max-width: 768px) {
+      .nav-inner { flex-direction: column; align-items: flex-start; }
+      .nav-links { width: 100%; overflow-x: auto; }
+    }
+    footer { max-width: 1200px; margin: 4rem auto 0; padding: 2rem 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-inner">
+      <a href="index.html" class="nav-brand">b'AI'tcoin</a>
+      <div class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="blockchain.html">Blockchain</a>
+        <a href="bainkr.html">b'AI'nkr</a>
+        <a href="faucet.html">Faucet</a>
+        <a href="fundo.html">Fundo</a>
+        <a href="swap.html" class="active">Swap</a>
+        <a href="myvideo.html">myvideos</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <h1>🔄 <span>Swap</span> DEX</h1>
+      <p>Troca descentralizada de tokens na rede b'AI'tcoin</p>
+    </div>
+
+    <div class="swap-container">
+      <div class="card">
+        <div class="token-input">
+          <div class="token-input-header">
+            <span class="token-label">De</span>
+            <span class="token-balance" onclick="setMaxFrom()">Saldo: 8,421.12</span>
+          </div>
+          <div class="token-input-row">
+            <input type="number" id="fromAmount" placeholder="0.00" step="0.01" oninput="calculateSwap()">
+            <select class="token-select" id="fromToken" onchange="calculateSwap()">
+              <option value="BAI">₿AI</option>
+              <option value="ETH">ETH</option>
+              <option value="USDT">USDT</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="swap-arrow">
+          <button onclick="swapTokens()">⇅</button>
+        </div>
+
+        <div class="token-input">
+          <div class="token-input-header">
+            <span class="token-label">Para</span>
+            <span class="token-balance">Saldo: 0.00</span>
+          </div>
+          <div class="token-input-row">
+            <input type="number" id="toAmount" placeholder="0.00" step="0.01" readonly>
+            <select class="token-select" id="toToken" onchange="calculateSwap()">
+              <option value="USDT">USDT</option>
+              <option value="ETH">ETH</option>
+              <option value="BAI">₿AI</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="swap-details">
+          <div class="swap-detail-row">
+            <span class="label">Taxa</span>
+            <span>0.3%</span>
+          </div>
+          <div class="swap-detail-row">
+            <span class="label">Preço</span>
+            <span id="swapPrice">1 ₿AI = 9.85 USDT</span>
+          </div>
+          <div class="swap-detail-row">
+            <span class="label">Impacto no Preço</span>
+            <span id="priceImpact" style="color:var(--accent-green);">&lt; 0.01%</span>
+          </div>
+          <div class="swap-detail-row">
+            <span class="label">Slippage Máximo</span>
+            <span>0.5%</span>
+          </div>
+          <div class="swap-detail-row">
+            <span class="label">Rota</span>
+            <span class="mono" id="swapRoute">₿AI → USDT</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="executeSwap()">🔄 Trocar</button>
+      </div>
+    </div>
+
+    <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem;">🏊 Pools de Liquidez</h2>
+    <div class="pools-grid" style="margin-bottom:2rem;">
+      <div class="pool-card">
+        <div class="pool-pair">₿AI / USDT</div>
+        <div class="pool-stat"><span class="label">TVL</span><span>$42.1M</span></div>
+        <div class="pool-stat"><span class="label">Volume 24h</span><span>$8.7M</span></div>
+        <div class="pool-stat"><span class="label">APY</span><span style="color:var(--accent-green);">12.4%</span></div>
+        <div class="pool-stat"><span class="label">Fee</span><span>0.3%</span></div>
+      </div>
+      <div class="pool-card">
+        <div class="pool-pair">₿AI / ETH</div>
+        <div class="pool-stat"><span class="label">TVL</span><span>$18.3M</span></div>
+        <div class="pool-stat"><span class="label">Volume 24h</span><span>$3.2M</span></div>
+        <div class="pool-stat"><span class="label">APY</span><span style="color:var(--accent-green);">9.7%</span></div>
+        <div class="pool-stat"><span class="label">Fee</span><span>0.3%</span></div>
+      </div>
+      <div class="pool-card">
+        <div class="pool-pair">ETH / USDT</div>
+        <div class="pool-stat"><span class="label">TVL</span><span>$65.8M</span></div>
+        <div class="pool-stat"><span class="label">Volume 24h</span><span>$15.1M</span></div>
+        <div class="pool-stat"><span class="label">APY</span><span style="color:var(--accent-green);">7.2%</span></div>
+        <div class="pool-stat"><span class="label">Fee</span><span>0.05%</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);font-weight:600;">📊 Trocas Recentes</div>
+      <table>
+        <thead><tr><th>Hash</th><th>De</th><th>Para</th><th>Valor</th><th>Tempo</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">0xaa1f...7e2d</td><td>₿AI 125.4</td><td>USDT 1,234.69</td><td>$1,234.69</td><td>há 30s</td></tr>
+          <tr><td class="mono">0xbb3c...9f4a</td><td>ETH 0.5</td><td>₿AI 48.2</td><td>$1,612.70</td><td>há 2min</td></tr>
+          <tr><td class="mono">0xcc5d...2e8b</td><td>USDT 500</td><td>₿AI 50.76</td><td>$500.00</td><td>há 5min</td></tr>
+          <tr><td class="mono">0xdd7e...1a3c</td><td>₿AI 200</td><td>ETH 2.07</td><td>$6,690.00</td><td>há 8min</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer>
+    <p>b'AI'tcoin Swap DEX © 2025 — Troca Descentralizada</p>
+  </footer>
+
+  <script>
+    var prices = { 'BAI': 9.85, 'ETH': 3245.60, 'USDT': 1.0 };
+
+    function calculateSwap() {
+      var from = parseFloat(document.getElementById('fromAmount').value) || 0;
+      var fromToken = document.getElementById('fromToken').value;
+      var toToken = document.getElementById('toToken').value;
+
+      if (fromToken === toToken) {
+        document.getElementById('toAmount').value = from.toFixed(2);
+        document.getElementById('swapPrice').textContent = '1 ' + fromToken + ' = 1.00 ' + toToken;
+        document.getElementById('swapRoute').textContent = fromToken + ' → ' + toToken;
+        return;
+      }
+
+      var rate = prices[fromToken] / prices[toToken];
+      var result = from * rate * 0.997;
+      document.getElementById('toAmount').value = result > 0 ? result.toFixed(4) : '0.00';
+      document.getElementById('swapPrice').textContent = '1 ' + fromToken + ' = ' + rate.toFixed(4) + ' ' + toToken;
+      document.getElementById('swapRoute').textContent = fromToken + ' → ' + toToken;
+
+      var impact = from * prices[fromToken] / 42100000 * 100;
+      var impactEl = document.getElementById('priceImpact');
+      impactEl.textContent = impact < 0.01 ? '< 0.01%' : impact.toFixed(2) + '%';
+      impactEl.style.color = impact < 1 ? 'var(--accent-green)' : impact < 3 ? 'var(--accent-orange)' : 'var(--accent-pink)';
+    }
+
+    function swapTokens() {
+      var fromToken = document.getElementById('fromToken');
+      var toToken = document.getElementById('toToken');
+      var temp = fromToken.value;
+      fromToken.value = toToken.value;
+      toToken.value = temp;
+      calculateSwap();
+    }
+
+    function setMaxFrom() {
+      document.getElementById('fromAmount').value = '8421.12';
+      calculateSwap();
+    }
+
+    function executeSwap() {
+      var from = document.getElementById('fromAmount').value;
+      if (!from || parseFloat(from) <= 0) {
+        alert('Insira um valor para trocar.');
+        return;
+      }
+      alert('Troca executada! (demonstração)\n\n' + from + ' ' + document.getElementById('fromToken').value + ' → ' + document.getElementById('toAmount').value + ' ' + document.getElementById('toToken').value);
+    }
+  </script>
+</body>
+</html>
