@@ -1,0 +1,24 @@
+---
+# cPanel Git Deployment Configuration
+# Quando o repo for clonado no cPanel via Git™ Version Control,
+# este arquivo será executado automaticamente após cada push.
+#
+# Setup:
+# 1. cPanel → Git™ Version Control → Create/Clone
+# 2. Clone: https://github.com/Nexus-HUP57/Jhon-Bly-Cly.git
+# 3. Branch: main
+# 4. Deploy automaticamente com este .cpanel.yml
+
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/$USER/public_html/
+    - /bin/cp -r netlify/index.html $DEPLOYPATH
+    - /bin/cp -r netlify/blockchain.html $DEPLOYPATH
+    - /bin/cp -r netlify/bainkr.html $DEPLOYPATH
+    - /bin/cp -r netlify/faucet.html $DEPLOYPATH
+    - /bin/cp -r netlify/fundo.html $DEPLOYPATH
+    - /bin/cp -r netlify/swap.html $DEPLOYPATH
+    - /bin/cp -r netlify/myvideo.html $DEPLOYPATH
+    - /bin/cp -r netlify/api.cgi $DEPLOYPATH
+    - /bin/cp -r netlify/favicon.svg $DEPLOYPATH
+    - /bin/chmod 755 $DEPLOYPATH/api.cgi
